@@ -106,23 +106,34 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
             elif not pos_sample:
                 patch_x, patch_y = self.extract_random_patches(x_train, y_train, self.patch_shape)
 
-            # reiniating the batch_size dimension
-            if self.normalize_mode == 'whitening':
-                patch_x = whitening(np.expand_dims(patch_x, axis = 0))
-            elif self.normalize_mode == 'normalize_clip':
-                patch_x = normalize_clip(np.expand_dims(patch_x, axis = 0), range = self.range)
-            elif self.normalize_mode == 'normalize':
-                patch_x = normalize(np.expand_dims(patch_x, axis = 0), range = self.range)
-            patch_y = np.expand_dims(patch_y, axis = 0)
-
-            # sanity checks
-            assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
-            assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
+            patch_x = self.normalization(patch_x)
+            assert self.sanity_checks(patch_x, patch_y)
 
             patches_x.append(patch_x), patches_y.append(patch_y)
 
-        input_data = np.vstack(patches_x)
-        seg_masks = np.vstack(patches_y)
+        input_data = np.stack(patches_x)
+        seg_masks = np.stack(patches_y)
         # pos_masks = seg_masks * input_data
         # return np.vstack(patches_x), np.vstack(patches_y)
         return (input_data, seg_masks)
+
+    def normalization(self, patch_x):
+        '''
+        Normalizes the image based on the specified mode and range
+        '''
+        # reiniating the batch_size dimension
+        if self.normalize_mode == 'whitening':
+            return whitening(patch_x)
+        elif self.normalize_mode == 'normalize_clip':
+            return normalize_clip(patch_x, range = self.range)
+        elif self.normalize_mode == 'normalize':
+            return normalize(patch_x, range = self.range)
+
+    def sanity_checks(self, patch_x, patch_y):
+        '''
+        Checks for NaNs, and makes sure that the labels are one-hot encoded
+        '''
+        # sanity checks
+        assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
+        assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
+        return True

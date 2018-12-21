@@ -47,7 +47,7 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
             # (h,w, n_slices)
             if self.ndim == 2:
                 slice_idx = randint(1, sitk_image.GetSize()[-1]-1)
-                sitk_x_slice = sitk_image[:,:,slice_idx-1:slice_idx] 
+                sitk_x_slice = sitk_image[:,:,slice_idx-1:slice_idx]
                 sitk_y_slice = sitk_label[:,:,slice_idx-1:slice_idx]
                 #resample; defaults to 1mm isotropic spacing
                 x_resample, y_resample = resample_img(sitk_x_slice), resample_img(sitk_y_slice, is_label = True)
@@ -67,21 +67,33 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
             # choose random index
             patch_x, patch_y = self.extract_random_patches(x_train, y_train, self.patch_shape)
             # print("patch_x: ", patch_x.shape, "patch_y: ", patch_y.shape)
-            # reiniating the batch_size dimension
-            if self.normalize_mode == 'whitening':
-                patch_x = whitening(np.expand_dims(patch_x, axis = 0))
-            elif self.normalize_mode == 'normalize_clip':
-                patch_x = normalize_clip(np.expand_dims(patch_x, axis = 0), range = self.range)
-            elif self.normalize_mode == 'normalize':
-                patch_x = normalize(np.expand_dims(patch_x, axis = 0), range = self.range)
-            patch_y = np.expand_dims(patch_y, axis = 0)
-            # tests
-            assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
-            assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
+            patch_x = self.normalization(patch_x)
+            assert self.sanity_checks(patch_x, patch_y)
 
             patches_x.append(patch_x), patches_y.append(patch_y)
 
-        return (np.vstack(patches_x), np.vstack(patches_y))
+        return (np.stack(patches_x), np.stack(patches_y))
+
+    def normalization(self, patch_x):
+        '''
+        Normalizes the image based on the specified mode and range 
+        '''
+        # reiniating the batch_size dimension
+        if self.normalize_mode == 'whitening':
+            return whitening(patch_x)
+        elif self.normalize_mode == 'normalize_clip':
+            return normalize_clip(patch_x, range = self.range)
+        elif self.normalize_mode == 'normalize':
+            return normalize(patch_x, range = self.range)
+
+    def sanity_checks(self, patch_x, patch_y):
+        '''
+        Checks for NaNs, and makes sure that the labels are one-hot encoded
+        '''
+        # sanity checks
+        assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
+        assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
+        return True
 
     def extract_random_patches(self, image, label, patch_shape):
         '''

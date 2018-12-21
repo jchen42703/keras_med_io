@@ -1,5 +1,5 @@
-import pos_gen
-import bal_gen
+import pos_gen #as pos_gen
+import bal_gen #as bal_gen
 import unittest
 import os
 
@@ -22,7 +22,7 @@ class PosBalGenTest(unittest.TestCase):
         self.data_dirs = [input_dir, labels_dir]
         self.list_IDs = os.listdir(input_dir)
 
-    @unittest.skip("Works.")
+    # @unittest.skip("Works.")
     def test_pos_patch_gen(self):
         '''
         Only tests that it crops properly for channels_last; assumes everything else is done correctly
