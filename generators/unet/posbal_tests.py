@@ -1,5 +1,5 @@
-import pos_gen #as pos_gen
-import bal_gen #as bal_gen
+import keras_med_io.generators.unet.pos_gen as pos_gen
+import keras_med_io.generators.unet.bal_gen as bal_gen
 import unittest
 import os
 

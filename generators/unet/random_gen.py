@@ -1,8 +1,8 @@
 import numpy as np
-from utils.gen_utils import BaseGenerator
-from utils.patch_utils import PatchExtractor
-from utils.io_func import normalize_clip, resample_img, whitening, normalize
-from utils.data_aug import *
+from keras_med_io.utils.gen_utils import BaseGenerator
+from keras_med_io.utils.patch_utils import PatchExtractor
+from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize
+from keras_med_io.utils.data_aug import *
 
 import keras
 import SimpleITK as sitk
@@ -76,7 +76,7 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
 
     def normalization(self, patch_x):
         '''
-        Normalizes the image based on the specified mode and range 
+        Normalizes the image based on the specified mode and range
         '''
         # reiniating the batch_size dimension
         if self.normalize_mode == 'whitening':

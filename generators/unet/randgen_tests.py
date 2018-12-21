@@ -1,4 +1,4 @@
-import random_gen
+import keras_med_io.generators.unet.random_gen as random_gen
 import unittest
 import os
 
