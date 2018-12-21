@@ -46,8 +46,8 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
             sitk_image, sitk_label = sitk.ReadImage(file_x), sitk.ReadImage(file_y)
             # (h,w, n_slices)
             if self.ndim == 2:
-                slice_idx = randint(1, sitk_image.GetSize()[-1]-1) # need to test
-                sitk_x_slice = sitk_image[:,:,slice_idx-1:slice_idx] #(320,320,1)
+                slice_idx = randint(1, sitk_image.GetSize()[-1]-1)
+                sitk_x_slice = sitk_image[:,:,slice_idx-1:slice_idx] 
                 sitk_y_slice = sitk_label[:,:,slice_idx-1:slice_idx]
                 #resample; defaults to 1mm isotropic spacing
                 x_resample, y_resample = resample_img(sitk_x_slice), resample_img(sitk_y_slice, is_label = True)
