@@ -65,7 +65,7 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
                 assert x_train.shape == y_train.shape
             # print("x_train: ", x_train.shape, "y_train: ", y_train.shape)
             # choose random index
-            patch_x, patch_y = self.extract_random_patch(x_train, y_train, self.patch_shape)
+            patch_x, patch_y = self.extract_random_patches(x_train, y_train, self.patch_shape)
             # print("patch_x: ", patch_x.shape, "patch_y: ", patch_y.shape)
             # reiniating the batch_size dimension
             if self.normalize_mode == 'whitening':
@@ -83,7 +83,7 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
 
         return (np.vstack(patches_x), np.vstack(patches_y))
 
-    def extract_random_patch(self, image, label, patch_shape):
+    def extract_random_patches(self, image, label, patch_shape):
         '''
         Takes both image and label and gets cropped random patches
 

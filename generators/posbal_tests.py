@@ -1,9 +1,8 @@
-import random_gen
-
+import posbal_gen
 import unittest
 import os
 
-class RandGenTest(unittest.TestCase):
+class PosBalGenTest(unittest.TestCase):
     '''
     Testing generators for both the U-Net and CapsNets Versions
         For each generator, the directories may vary; Fork and change them for individual testing
@@ -38,11 +37,11 @@ class RandGenTest(unittest.TestCase):
         #                                 patch_shape = patch_shape_2d, normalize_mode = self.normalize_mode,
         #                                 range = self.norm_range
         #                                  )
-        rand_gen_unet2d = random_gen.RandomPatchGenerator(self.list_IDs, self.data_dirs,
+        rand_gen_unet2d = posbal_gen.PositivePatchGenerator(self.list_IDs, self.data_dirs,
                                         batch_size = self.batch_size, patch_shape = patch_shape_2d, normalize_mode = self.normalize_mode,
                                         range = self.norm_range
                                          )
-        rand_gen_unet3d = random_gen.RandomPatchGenerator(self.list_IDs, self.data_dirs,
+        rand_gen_unet3d = posbal_gen.PositivePatchGenerator(self.list_IDs, self.data_dirs,
                                         batch_size = self.batch_size, patch_shape = patch_shape_3d, normalize_mode = self.normalize_mode,
                                         range = self.norm_range
                                          )
