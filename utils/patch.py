@@ -1,3 +1,5 @@
+import numpy as np
+
 def compute_patch_indices(image_shape, patch_size, overlap, start=None):
   '''
   image_shape: ndarray of dimensions
@@ -20,7 +22,6 @@ def compute_patch_indices(image_shape, patch_size, overlap, start=None):
 def get_set_of_patch_indices(start, stop, step):
     return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1],
                                start[2]:stop[2]:step[2]].reshape(3, -1).T, dtype=np.int)
-
 
 def get_random_patch_index(image_shape, patch_shape):
     """
