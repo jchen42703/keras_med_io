@@ -11,6 +11,7 @@ def to_do():
     * histogram_normalization
     * channels_last for get_multi_class_labels
     '''
+    return ()
 # helper functions
 def whitening(arr):
     '''
@@ -88,48 +89,31 @@ def N4_bias_correction(img):
     img_mask=sitk.Cast(sitk.BinaryNot(sitk.BinaryThreshold(img, 0, 0)), sitk.sitkUInt8)
     return sitk.N4BiasFieldCorrection(img, img_mask)
 
-# def get_multi_class_labels(data, n_labels, labels=None):
-#     """
-#     CHANNELS_FIRST (still not updated to channels_last)
-#     Translates a label map into a set of binary labels.
-#     :param data: numpy array containing the label map with shape: (n_samples, 1, ...).
-#         ** if regular images are 4D, the labels should be expanded to 4D as well
-#     :param n_labels: number of labels.
-#     :param labels: integer values of the labels.
-#     :return: binary numpy array of shape: (n_samples, n_labels, ...)
-#     """
-#     if isinstance(arr,sitk.Image):
-#         arr = sitk.GetArrayFromImage(arr)
-#
-#     new_shape = [data.shape[0], n_labels] + list(data.shape[2:])
-#     y = np.zeros(new_shape, np.int8)
-#     for label_index in range(n_labels):
-#         if labels is not None:
-#             y[:, label_index][data[:, 0] == labels[label_index]] = 1
-#         else:
-#             y[:, label_index][data[:, 0] == (label_index + 1)] = 1
-#     return y
-
-def get_multi_class_labels_first(data, n_labels, labels=None):
+def get_multi_class_labels(data, n_labels, labels=None, remove_background = False):
     """
-    CHANNELS_FIRST
+    Channels_last for multiclass.
+    **** Make sure to remove the background class dim (first dim of the output label)
+
     Translates a label map into a set of binary labels.
     :param data: numpy array containing the label map with shape: (n_samples, 1, ...).
         ** if regular images are 4D, the labels should be expanded to 4D as well
     :param n_labels: number of labels.
     :param labels: integer values of the labels.
+    :param remove_background: option to drop the background mask (first label 0)
     :return: binary numpy array of shape: (n_samples, n_labels, ...)
     """
-    if isinstance(arr,sitk.Image):
-        arr = sitk.GetArrayFromImage(arr)
 
-    new_shape = [data.shape[0], n_labels] + list(data.shape[2:])
+    new_shape = data.shape + (n_labels,)
     y = np.zeros(new_shape, np.int8)
+    print(y.shape)
     for label_index in range(n_labels):
         if labels is not None:
-            y[:, label_index][data[:, 0] == labels[label_index]] = 1
+            y[:,:,:, label_index][data == labels[label_index]] = 1
         else:
-            y[:, label_index][data[:, 0] == (label_index + 1)] = 1
+            y[:, :, :, label_index][data == (label_index + 1)] = 1
+    if remove_background:
+        without_background = n_labels - 1
+        y = y[-without_background:]
     return y
 
 ############### utility
@@ -164,6 +148,25 @@ def get_list_IDs(data_dir, val_split = 0.8):
     return {'train': id_list[:train], 'val': id_list[train:]
            }
 
+def sanity_checks(patch_x, patch_y):
+    '''
+    Checks for NaNs, and makes sure that the labels are one-hot encoded
+    '''
+    # sanity checks
+    assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
+    assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
+    return True
+
+def add_channel(image):
+    '''
+    Adds a single channel dimension to a 3D or 2D monomodal SimpleITK image or numpy array.
+    * channels_last
+    '''
+    if isinstance(image, sitk.Image):
+        image = GetArrayFromImage(image)
+    return np.expand_dims(image.squeeze(), -1).astype(np.float32)
+
+############## NOT IN USE
 def convert_4D_to_3D(arr_4D):
     '''
     arr_4D: sitk image (x,y,z, n_channels)
