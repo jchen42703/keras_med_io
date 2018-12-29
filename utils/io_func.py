@@ -6,10 +6,11 @@ from glob import glob
 
 import SimpleITK as sitk
 import numpy as np
+
 def to_do():
     '''
     * histogram_normalization
-    * channels_last for get_multi_class_labels
+    * resample for multiple channels with nibabel
     '''
     return ()
 # helper functions

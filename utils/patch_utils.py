@@ -16,7 +16,7 @@ class PatchExtractor(object):
         '''
         Extracting both 2D and 3D patches depending on patch shape dimensions
         '''
-        patch_index = np.asarray(patch_index, dtype=np.int16)
+        patch_index = np.asarray(patch_index, dtype = np.int16)
         patch_shape = np.asarray(patch_shape, dtype = np.int16)
 
         image_shape = data.shape[:self.ndim]
@@ -43,6 +43,7 @@ class PatchExtractor(object):
 
     def compute_patch_indices(self, image_shape, patch_shape, overlap, start=None):
         '''
+        (no channel)
         image_shape: ndarray of dimensions
         patch_shape: ndarray of patch dimensions
         returns: a np array of coordinates & step
