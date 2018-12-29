@@ -15,16 +15,18 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
     * list_IDs
     * data_dirs: list of training/label dirs
     * batch_size:
+    * Added n_windows (number of windows to extract per image)
     * patch_shape: tuple of shape without channels
     * shuffle:
     Assumes that scans are single channel image and that they are channels_last
     * no support for overlap
     """
-    def __init__(self,  list_IDs, data_dirs, batch_size, patch_shape,
+    def __init__(self,  list_IDs, data_dirs, batch_size, n_windows, patch_shape,
                  normalize_mode = 'whitening', range = [0,1], n_channels = 1, shuffle = True):
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
+        self.n_windows = n_windows
         self.patch_shape = patch_shape
         self.normalize_mode = normalize_mode
         self.range = range
@@ -62,11 +64,12 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
             if self.n_channels == 1:
                 x_train, y_train = add_channel(x_train), add_channel(y_train)
             # print("before extraction: ", x_train.shape, y_train.shape)
-            patch_x, patch_y = self.extract_pos_patches(x_train, y_train, self.patch_shape)
-            # print("after extraction: ", patch_x.shape, patch_y.shape)
-            patch_x = self.normalization(patch_x)
-            assert sanity_checks(patch_x, patch_y)
-            patches_x.append(patch_x), patches_y.append(patch_y)
+            for window in self.n_windows:
+                patch_x, patch_y = self.extract_pos_patches(x_train, y_train, self.patch_shape)
+                # print("after extraction: ", patch_x.shape, patch_y.shape)
+                patch_x = self.normalization(patch_x)
+                assert sanity_checks(patch_x, patch_y)
+                patches_x.append(patch_x), patches_y.append(patch_y)
         # return np.vstack(patches_x), np.vstack(patches_y)
         return (np.stack(patches_x), np.stack(patches_y))
 
