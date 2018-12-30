@@ -85,7 +85,7 @@ class LocalFileGenerator(PatchExtractor):
                 new_x = os.path.join(out_dir, id.split('.')[0] + '_' + str(idx))
                 np.save(new_x, patch)
                 print("Saving: ", new_x)
-        results = self.save_dict(self.indices, 'indices.json')
+        results = self.save_dict(self.indices, 'indices.pickle')
         print("Completed! Saved ", str(n_patch_pairs), "patch pairs.")
         return n_patch_pairs
 
