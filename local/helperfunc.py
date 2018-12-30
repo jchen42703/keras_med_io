@@ -1,19 +1,17 @@
 import numpy as np
 import os
 import tensorflow as tf
+import pickle
+import collections
+import logging
 
-from batchgenerators.augmentations.resample_augmentations import augment_linear_downsampling_scipy
-from batchgenerators.augmentations.spatial_transformations \
-    import augment_spatial
-from batchgenerators.augmentations.noise_augmentations \
+from keras_med_io.batchgenerators.augmentations.resample_augmentations import augment_linear_downsampling_scipy
+from keras_med_io.batchgenerators.augmentations.spatial_transformations \
+    import augment_spatial_nocrop
+from keras_med_io.batchgenerators.augmentations.noise_augmentations \
     import augment_gaussian_noise
 
 ######## TFRecordDataset Funcs #######
-def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 def read_json(fpath):
     with open(fpath, 'r') as fp:
@@ -23,19 +21,26 @@ def write_json(f, fpath):
     with open(fpath, 'w') as fp:
         return(json.dump(f, fp))
 
-def transforms(volume, segmentation, patch_size_, fraction_, spacing_,
-               variance_):
-    # BEWARE SPACING: dset.spacing = (x,y,z) but volume is shaped (z,x,y))
-    volume, augmentation, rval = augment_spatial(
+def transforms(volume, segmentation, n_dim, fraction_,
+               variance_, data_format_in = "channels_last"):
+    '''
+    Does data aug
+    Random elastic deformations, random scaling, random rotations, gaussian noise
+    '''
+    # converts data to channels_first
+    if data_format_in == "channels_last":
+        if n_dim == 2:
+            to_channels_first = [0,-1,1,2]
+        elif n_dim == 3:
+            to_channels_first = [0,-1, 2,3]
+        volume = np.transpose(volume, to_channels_first)
+        segmentation = np.transpose(segmentation, to_channels_first)
+
+    volume, segmentation = augment_spatial_nocrop(
                                     volume,
                                     segmentation,
-                                    patch_size=patch_size_,
-                                    patch_center_dist_from_border=np.array(
-                                        patch_size_) // 2,
+                                    n_dim,
                                     border_mode_data='constant',
-                                    border_mode_seg='constant',
-                                    border_cval_data=np.min(volume),
-                                    border_cval_seg=0,
                                     alpha=(0, 750),
                                     sigma=(10, 13),
                                     scale=(0.8, 1.2),
@@ -45,11 +50,53 @@ def transforms(volume, segmentation, patch_size_, fraction_, spacing_,
                                     angle_x=(0, 2*np.pi),
                                     angle_y=(0, 0),
                                     angle_z=(0, 0),
-                                    fraction=fraction_,
-                                    spacing=spacing_)
+                                    fraction=fraction_)
+                                    #spacing=spacing_)
     if np.any(variance_ != 0):
         volume = augment_gaussian_noise(volume, noise_variance=variance_)
-    return volume, augmentation, rval
+    # converts data to channels_last
+    if n_dim == 2:
+        to_channels_last = [0,2,3,1]
+    elif n_dim == 3:
+        to_channels_last = [0,2,3,4,1]
+    volume = np.transpose(volume, to_channels_last)
+    segmentation = np.transpose(segmentation, to_channels_last)
+    return volume, segmentation
+
+def distribution_strategy(num_gpus):
+    if num_gpus == 1:
+        return tf.contrib.distribute.OneDeviceStrategy(device='/gpu:0')
+    elif num_gpus > 1:
+        return tf.contrib.distribute.MirroredStrategy(num_gpus=num_gpus)
+    else:
+        return None
+
+def start_logger(logfile, level=logging.INFO):
+    """Start logger
+    Parameters
+    ----------
+    logfile : string (optional)
+        file to which the log is saved
+    level : int, default: logging.INFO
+        logging level as int or logging.DEBUG, logging.ERROR
+    """
+    f = '%(asctime)s %(name)-35s %(levelname)-8s %(message)s'
+    logging.basicConfig(level=level,
+                        format=f,
+                        datefmt='%d.%m. %H:%M:%S',
+                        filename=logfile,
+                        filemode='w')
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter(
+        '%(asctime)s [%(name)s %(levelname)s] %(message)s')
+    formatter.datefmt = '%d.%m. %H:%M:%S'
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
 
 ######## Utility ########
 
