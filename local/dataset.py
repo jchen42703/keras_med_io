@@ -32,7 +32,7 @@ class TFRdataset(object):
         self.labels_path = os.path.join(self.in_dir, 'labelsTr')
         self.ids = os.listdir(self.labels_path) #assumes that inputs and labels have same names
         np.random.shuffle(self.ids)
-        # should include both channels (...., n_channels)
+        # should include channels (...., n_channels)
         self.shape = shape
         # assumes all .npy arrays have the same shape
 
@@ -52,10 +52,13 @@ class TFRdataset(object):
         # loading and writing
         for id in self.ids:
             holder['idx'] = id
-            holder['image'] = np.expand_dims(np.load(os.path.join(self.inputs_path, id)), 0) # adding batch_size dim
-            holder['label'] = np.expand_dims(np.load(os.path.join(self.labels_path, id)), 0)
+            # holder['image'] = np.expand_dims(np.load(os.path.join(self.inputs_path, id)), 0) # adding batch_size dim
+            # holder['label'] = np.expand_dims(np.load(os.path.join(self.labels_path, id)), 0)
+            holder['image'] = np.load(os.path.join(self.inputs_path, id)) # (..., n_channels)
+            holder['label'] = np.load(os.path.join(self.labels_path, id))
             self.write_to_tfrecord(holder)
-            logging.info(holder['idx'] + ' processed')
+            logging.info(holder['idx'] + ' processed' + \
+                        '\nShape: ' + str(holder['image'].shape))
         self.writer.close()
 
     def write_to_tfrecord(self, holder):
@@ -74,15 +77,15 @@ class TFRdataset(object):
             converting to uint8'.format(holder['label'].dtype))
             holder['label'] = holder['label'].astype(np.uint8)
 
-        # shape checking
-        try:
-            assert(holder['image'].shape[:-1]
-                   == holder['label'].shape[:-1])
-        except AssertionError:
-            logging.warning(holder['idx'] + ':expected shapes to be \
-                            equal, but image was {} and label was {}'.format(
-                                holder['image'].shape[:-1],
-                                holder['label'].shape[:-1]))
+        # # shape checking
+        # try:
+        #     assert(holder['image'].shape[:-1]
+        #            == holder['label'].shape[:-1])
+        # except AssertionError:
+        #     logging.warning(holder['idx'] + ':expected shapes to be \
+        #                     equal, but image was {} and label was {}'.format(
+        #                         holder['image'].shape[:-1],
+        #                         holder['label'].shape[:-1]))
 
         raw_image = holder['image'].tobytes()
         raw_label = holder['label'].tobytes()
@@ -165,11 +168,11 @@ class TFRdataset(object):
         shape_i = tf.decode_raw(parsed['shape_i'], tf.int32)
         image = tf.decode_raw(parsed['image'], tf.float32)
         image = tf.reshape(image, shape_i)
-        image = tf.cond(
-                    tf.greater_equal(
-                        tf.rank(image), 4),
-                    lambda: image,
-                    lambda: tf.expand_dims(image, 0))
+        # image = tf.cond(
+        #             tf.greater_equal(
+        #                 tf.rank(image), 4),
+        #             lambda: image,
+        #             lambda: tf.expand_dims(image, 0))
 
         shape_l = tf.decode_raw(parsed['shape_l'], tf.int32)
         mask = tf.decode_raw(parsed['label'], tf.uint8)
@@ -186,8 +189,8 @@ class TFRdataset(object):
         image.set_shape(self.shape)
         mask.set_shape(self.shape)
 
-        print("input shape" + str(image.shape))
-        print("segmentation shape" + str(image.shape))
+        print("input shape: " + str(image.shape))
+        print("segmentation shape: " + str(image.shape))
 
         # what's the difference??
         if self.mode == 'train':

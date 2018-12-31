@@ -97,10 +97,10 @@ def augment_spatial_nocrop(data, seg,
                 for channel_id in range(seg.shape[1]):
                     seg_result[sample_id, channel_id] = interpolate_img(seg[sample_id, channel_id], coords, order_seg,
                                                                         border_mode_seg, cval=border_cval_seg, is_seg=True)
-            return data_result, seg_result
-
         else:
-            return data, seg
+            data_result = data
+            seg_result = seg
+    return data_result, seg_result
 
 ## ACTUAL
 
