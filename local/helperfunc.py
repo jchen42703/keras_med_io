@@ -28,11 +28,11 @@ def transforms(volume, segmentation, n_dim, fraction_,
     Random elastic deformations, random scaling, random rotations, gaussian noise
     '''
     # converts data to channels_first
-    if data_format_in == "channels_last":
+    if data_format_in == "channels_last": # assumes no batch_size dim
         if n_dim == 2:
-            to_channels_first = [0,-1,1,2]
+            to_channels_first = [-1,0,1]
         elif n_dim == 3:
-            to_channels_first = [0,-1, 2,3]
+            to_channels_first = [-1,0,1,2]
         volume = np.transpose(volume, to_channels_first)
         segmentation = np.transpose(segmentation, to_channels_first)
 
@@ -56,9 +56,9 @@ def transforms(volume, segmentation, n_dim, fraction_,
         volume = augment_gaussian_noise(volume, noise_variance=variance_)
     # converts data to channels_last
     if n_dim == 2:
-        to_channels_last = [0,2,3,1]
+        to_channels_last = [1,2,0]
     elif n_dim == 3:
-        to_channels_last = [0,2,3,4,1]
+        to_channels_last = [1,2,3,0]
     volume = np.transpose(volume, to_channels_last)
     segmentation = np.transpose(segmentation, to_channels_last)
     return volume, segmentation

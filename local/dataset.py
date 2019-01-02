@@ -21,22 +21,36 @@ class TFRdataset(object):
             * imagesTr
             * labelsTr
      -> Assumes that files/labels have same corresponding names
+
+    Attributes:
+        in_dir: path to the main directory with the folders "imagesTr" and "labelsTr" to the numpy arrays
+            * assumes all the numpy arrays have the same shape
+        n_dim: 2 or 3
+        shape: tuple representing shape, could be 2D/3D; (..., n_channels)
+            channels_last
+
+    To Do:
+        Fixing parse_image?
+            Add support to compensate for numpy headers
+        Sharding + shuffling sharded datasets
     '''
     def __init__(self, in_dir, n_dim, shape):
         self.in_dir = in_dir
         self.n_dim = n_dim
+        self.shape = shape
 
         self.dset_path = os.path.join(self.in_dir, 'dataset.tfrecord')
-        dformat = '*.npy'
         self.inputs_path = os.path.join(self.in_dir, 'imagesTr')
         self.labels_path = os.path.join(self.in_dir, 'labelsTr')
         self.ids = os.listdir(self.labels_path) #assumes that inputs and labels have same names
         np.random.shuffle(self.ids)
-        # should include channels (...., n_channels)
-        self.shape = shape
-        # assumes all .npy arrays have the same shape
 
     def make_train_dataset(self, compression=None, output_path=None):
+        '''
+        Args:
+            compression: boolean on whether or not you want compression
+            output_path: path to where the tfrecord will be stored.
+        '''
         # initialising the tfrecord writer
         if compression:
             options = tf.python_io.TFRecordOptions(
@@ -52,8 +66,6 @@ class TFRdataset(object):
         # loading and writing
         for id in self.ids:
             holder['idx'] = id
-            # holder['image'] = np.expand_dims(np.load(os.path.join(self.inputs_path, id)), 0) # adding batch_size dim
-            # holder['label'] = np.expand_dims(np.load(os.path.join(self.labels_path, id)), 0)
             holder['image'] = np.load(os.path.join(self.inputs_path, id)) # (..., n_channels)
             holder['label'] = np.load(os.path.join(self.labels_path, id))
             self.write_to_tfrecord(holder)
@@ -62,6 +74,11 @@ class TFRdataset(object):
         self.writer.close()
 
     def write_to_tfrecord(self, holder):
+        '''
+        Writes to the TFRecordWriter.
+        Args:
+            holder: dictionary with all of the necessary info
+        '''
         # type checking
         try:
             assert(holder['image'].dtype == np.float32)
@@ -76,16 +93,6 @@ class TFRdataset(object):
             logging.info(holder['idx'] + ': np.uint8 expected, got {}, \
             converting to uint8'.format(holder['label'].dtype))
             holder['label'] = holder['label'].astype(np.uint8)
-
-        # # shape checking
-        # try:
-        #     assert(holder['image'].shape[:-1]
-        #            == holder['label'].shape[:-1])
-        # except AssertionError:
-        #     logging.warning(holder['idx'] + ':expected shapes to be \
-        #                     equal, but image was {} and label was {}'.format(
-        #                         holder['image'].shape[:-1],
-        #                         holder['label'].shape[:-1]))
 
         raw_image = holder['image'].tobytes()
         raw_label = holder['label'].tobytes()
@@ -104,14 +111,14 @@ class TFRdataset(object):
                     feature={
                         'image': _bytes_feature(raw_image),
                         'shape_i': _bytes_feature(shape_i),
-                        'img_dtype': _bytes_feature(
-                            tf.compat.as_bytes(str(holder['image'].dtype))),
+                        # 'img_dtype': _bytes_feature(
+                        #     tf.compat.as_bytes(str(holder['image'].dtype))),
                         'label': _bytes_feature(raw_label),
                         'shape_l': _bytes_feature(shape_l),
-                        'label_dtype': _bytes_feature(
-                            tf.compat.as_bytes(str(holder['label'].dtype))),
-                        'idx': _bytes_feature(
-                            tf.compat.as_bytes(holder['idx'])),
+                        # 'label_dtype': _bytes_feature(
+                        #     tf.compat.as_bytes(str(holder['label'].dtype))),
+                        # 'idx': _bytes_feature(
+                        #     tf.compat.as_bytes(holder['idx'])),
                     }))
         self.writer.write(entry.SerializeToString())
 
@@ -119,7 +126,18 @@ class TFRdataset(object):
                            num_parallel_calls=8, mode='train', fraction=0.0,
                            shuffle_size=100, variance=0.1, compression=None,
                            multi_GPU=False):
-
+        '''
+        Args:
+            number_epochs:
+            batch_size:
+            num_parallel_calls:
+            mode:
+            fraction:
+            shuffle_size:
+            variance:
+            compression:
+            multi_GPU:
+        '''
         self.mode = mode
         self.batch_size = batch_size
         self.fraction = fraction
@@ -153,26 +171,27 @@ class TFRdataset(object):
     def parse_image(self, entry):
         '''
         Decodes the TFRecordDataset and does data aug
+        Args:
+            entry: a serialized tf.train.Example to parse
+                either bytes or a Tensor with the type tf.string
         '''
+        print("this printed: ", type(entry))
+        # entry = entry.SerializeToString()
+        # assert type(entry) == bytes
         parsed = tf.parse_single_example(entry, features={
                     'image': tf.FixedLenFeature([], tf.string),
                     'shape_i': tf.FixedLenFeature([], tf.string),
-                    'img_dtype': tf.FixedLenFeature([], tf.string),
+                    # 'img_dtype': tf.FixedLenFeature([], tf.string),
                     'label': tf.FixedLenFeature([], tf.string),
                     'shape_l': tf.FixedLenFeature([], tf.string),
-                    'label_dtype': tf.FixedLenFeature([], tf.string),
-                    'idx': tf.FixedLenFeature([], tf.string),
+                    # 'label_dtype': tf.FixedLenFeature([], tf.string),
+                    # 'idx': tf.FixedLenFeature([], tf.string),
                     })
 
         # TODO: make dtype flexible
         shape_i = tf.decode_raw(parsed['shape_i'], tf.int32)
         image = tf.decode_raw(parsed['image'], tf.float32)
         image = tf.reshape(image, shape_i)
-        # image = tf.cond(
-        #             tf.greater_equal(
-        #                 tf.rank(image), 4),
-        #             lambda: image,
-        #             lambda: tf.expand_dims(image, 0))
 
         shape_l = tf.decode_raw(parsed['shape_l'], tf.int32)
         mask = tf.decode_raw(parsed['label'], tf.uint8)
@@ -184,13 +203,13 @@ class TFRdataset(object):
                                  [image, mask, self.n_dim , self.fraction, self.variance],
                                  Tout=[tf.float32, tf.float32])
         mask = tf.cast(mask, tf.uint8)
-        # static output shape required by tf.dataset.batch() method!
+        # static output shape required by tf.dataset.batch() method
         # assumes shape (..., n_channels)
         image.set_shape(self.shape)
         mask.set_shape(self.shape)
 
         print("input shape: " + str(image.shape))
-        print("segmentation shape: " + str(image.shape))
+        print("segmentation shape: " + str(mask.shape))
 
         # what's the difference??
         if self.mode == 'train':
@@ -198,38 +217,3 @@ class TFRdataset(object):
         elif self.mode == 'inference':
             # tf.Print(['img shape'], [tf.shape(stacked[:self.num_modalities])])
             return(image, mask)
-
-# if __name__ == '__main__':
-#
-#     parser = argparse.ArgumentParser(description='generate dataset for'
-#                                      'MSD_challenge')
-#     parser.add_argument('-i', '--input', help='input (root) path',
-#                         required=True)
-#     parser.add_argument('-o', '--output',
-#                         help='path to store generated TFRecord and json',
-#                         required=True)
-#     parser.add_argument('-s', '--save_interpolation',
-#                         help='save interpolated images',
-#                         required=False,
-#                         default=None)
-#     parser.add_argument('-c', '--compression',
-#                         help='compress generated TFRecord',
-#                         required=False,
-#                         default=None)
-#
-#     args = vars(parser.parse_args())
-#
-#     fpath = args['input']
-#     output_path = args['output']
-#     compression = args['compression']
-#     # save_images = args['save_interpolation']
-#
-#     start_logger(os.path.join(fpath + 'dataset_generation'))
-#     logger = logging.getLogger(__name__)
-#     dset = TFRdataset(fpath)
-#     if dset.spacing is None or dset.shapes is None:
-#         dset.scan_dataset_spacing_shapes()
-#     dset.make_train_dataset(output_path=output_path,
-#                             compression=compression,
-#                             )
-#                             # save_interpolation=save_images)
