@@ -2,7 +2,7 @@ import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
 from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize
-from keras_med_io.utils.data_aug import *
+# from keras_med_io.utils.data_aug_deprecated import *
 
 import keras
 import SimpleITK as sitk
@@ -14,15 +14,17 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
     """
     Generating patches with only the positive class.
     Attributes:
-    * list_IDs
-    * data_dirs: list of training/label dirs
-    * batch_size:
-    * patch_shape: tuple of shape without channels
-    * overlap:
-    * start:
-    * shuffle:
-    Assumes that scans are single channel image and that they are channels_last
-    * no support for overlap
+        list_IDs: list of filenames
+        data_dirs: list of paths to both the input dir and labels dir
+        batch_size: The number of images you want in a single batch
+        patch_shape: tuple of patch shape without the number of channels
+        normalize_mode: representing the type of normalization of either
+            "normalize": squeezes between the specified range
+            "whitening": mean var standardizes the data
+            "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
+        start: int
+        range: the specified range for normalization
+        shuffle: boolean
     """
     def __init__(self,  list_IDs, data_dirs, batch_size, patch_shape,
                  normalize_mode = 'whitening', range = [0,1], start = None, shuffle = True):

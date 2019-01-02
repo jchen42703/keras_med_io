@@ -2,7 +2,7 @@ import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
 from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize, sanity_checks, add_channel
-from keras_med_io.utils.data_aug import *
+# from keras_med_io.utils.data_aug_deprecated import *
 
 from keras_med_io.contrib.without_resampling.pos_gen import PositivePatchGenerator
 from keras_med_io.contrib.without_resampling.random_gen import RandomPatchGenerator
@@ -18,6 +18,21 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
         * n_pos: the number of images in batch to contain a positive class
     ** CHANNELS_LAST
     ** LOADS DATA WITH Nibabel
+
+    Attributes:
+        list_IDs: list of filenames
+        data_dirs: list of paths to both the input dir and labels dir
+        batch_size: The number of images you want in a single batch
+        patch_shape: tuple of patch shape without the number of channels
+        normalize_mode: representing the type of normalization of either
+            "normalize": squeezes between the specified range
+            "whitening": mean var standardizes the data
+            "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
+        range: the specified range for normalization
+        n_pos: number of positive samples in a batch
+        overlap: number of pixel overlap desired for patch overlapping
+        n_channels: number of channels
+        shuffle: boolean
     '''
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
                  normalize_mode = 'whitening', range = [0,1], n_pos = 1, overlap = 0, n_channels = 1, shuffle = True):

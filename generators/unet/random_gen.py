@@ -2,7 +2,7 @@ import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
 from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize
-from keras_med_io.utils.data_aug import *
+# from keras_med_io.utils.data_aug_deprecated import *
 
 import keras
 import SimpleITK as sitk
@@ -16,6 +16,19 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
     New Args:
         * normalize_mode: either 'whitening', 'normalize', 'normalize_clip' for output preprocessing
     Need to make compatible with multiple channels
+
+    Attributes:
+        list_IDs: list of filenames
+        data_dirs: list of paths to both the input dir and labels dir
+        batch_size: The number of images you want in a single batch
+        patch_shape: tuple of patch shape without the number of channels
+        normalize_mode: representing the type of normalization of either
+            "normalize": squeezes between the specified range
+            "whitening": mean var standardizes the data
+            "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
+        range: the specified range for normalization
+        overlap: number of pixel overlap desired for patch overlapping
+        shuffle: boolean
     '''
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
                  normalize_mode = 'whitening', range = [0,1], overlap = 0, shuffle = True):
