@@ -15,7 +15,6 @@ class PatchTest(unittest.TestCase):
         self.train_image_3D = np.zeros(self.image_shape_3D)
         self.label_image_3D = np.ones(self.image_shape_3D)
 
-
         self.overlap = 0
         self.extractor_2D = PatchExtractor(ndim = 2, image_format = "channels_first")
         self.extractor_2D_last = PatchExtractor(ndim = 2, image_format = "channels_last")

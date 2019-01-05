@@ -1,11 +1,11 @@
 import numpy as np
 
 def compute_patch_indices(image_shape, patch_size, overlap, start=None):
-  '''
+  """
   image_shape: ndarray of dimensions
   patch_size: ndarray of patch dimensions
   returns: a np array of coordinates & step
-  '''
+  """
   if isinstance(overlap, int):
       overlap = np.asarray([overlap] * len(image_shape))
   if start is None:
@@ -18,25 +18,9 @@ def compute_patch_indices(image_shape, patch_size, overlap, start=None):
   step = patch_size - overlap
   return get_set_of_patch_indices(start, stop, step)
 
-
 def get_set_of_patch_indices(start, stop, step):
     return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1],
                                start[2]:stop[2]:step[2]].reshape(3, -1).T, dtype=np.int)
-
-def get_random_patch_index(image_shape, patch_shape):
-    """
-    Returns a random corner index for a patch. If this is used during training, the middle pixels will be seen by
-    the model way more often than the edge pixels (which is probably a bad thing).
-    :param image_shape: Shape of the image
-    :param patch_shape: Shape of the patch
-    :return: a tuple containing the corner index which can be used to get a patch from an image
-    """
-    return get_random_nd_index(np.subtract(image_shape, patch_shape))
-
-
-def get_random_nd_index(index_max):
-    return tuple([np.random.choice(index_max[index] + 1) for index in range(len(index_max))])
-
 
 def get_patch_from_3d_data(data, patch_shape, patch_index):
     """
@@ -54,14 +38,15 @@ def get_patch_from_3d_data(data, patch_shape, patch_index):
     return data[..., patch_index[0]:patch_index[0]+patch_shape[0], patch_index[1]:patch_index[1]+patch_shape[1],
                 patch_index[2]:patch_index[2]+patch_shape[2]]
 
-
-def fix_out_of_bound_patch_attempt(data, patch_shape, patch_index, ndim=3):
+def fix_out_of_bound_patch_attempt(data, patch_shape, patch_index, ndim):
     """
     Pads the data and alters the patch index so that a patch will be correct.
-    :param data:
-    :param patch_shape:
-    :param patch_index:
-    :return: padded data, fixed patch index
+    Args:
+        data:
+        patch_shape:
+        patch_index:
+    Returns:
+        padded data, fixed patch index
     """
     image_shape = data.shape[-ndim:]
     pad_before = np.abs((patch_index < 0) * patch_index)
@@ -77,12 +62,14 @@ def reconstruct_from_patches(patches, patch_indices, data_shape, default_value=0
     """
     Reconstructs an array of the original shape from the lists of patches and corresponding patch indices. Overlapping
     patches are averaged.
-    :param patches: List of numpy array patches.
-    :param patch_indices: List of indices that corresponds to the list of patches.
-    :param data_shape: Shape of the array from which the patches were extracted.
-    :param default_value: The default value of the resulting data. if the patch coverage is complete, this value will
-    be overwritten.
-    :return: numpy array containing the data reconstructed by the patches.
+    Args:
+        patches: List of numpy array patches.
+        patch_indices: List of indices that corresponds to the list of patches.
+        data_shape: Shape of the array from which the patches were extracted.
+        default_value: The default value of the resulting data. if the patch coverage is complete, this value will
+        be overwritten.
+    Returns:
+        Numpy array containing the data reconstructed by the patches.
     """
     data = np.ones(data_shape) * default_value
     image_shape = data_shape[-3:]
