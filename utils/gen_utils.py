@@ -1,28 +1,37 @@
-# from CapsNetsMRI.io.data_aug import *
-# from CapsNetsMRI.io.io_func import normalize_clip, resample_img, whitening, normalize
 import keras
-import SimpleITK as sitk
-from SimpleITK import GetArrayFromImage, ReadImage
-from random import randint
 import numpy as np
-from glob import glob
 import os
+# from keras_med_io.utils.io_func import normalize_clip, whiten, normalize
 
 class BaseGenerator(keras.utils.Sequence):
     '''
-    For generating 2D thread-safe data in keras. (no preprocessing and channels_last)
+    Basic framework for generating 2D thread-safe data in keras. (no preprocessing and channels_last)
+    Based on https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
+
     Attributes:
       list_IDs: filenames (.nii files); must be same for training and labels
       data_dirs: list of [training_dir, labels_dir]
       batch_size: int of desired number images per epoch
       n_channels: <-
+      n_classes: <-
+      normalize_mode: representing the type of normalization of either
+          "normalize": squeezes between the specified range
+          "whiten": mean var standardizes the data
+          "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
+      norm_range: the specified range for normalization
+      shuffle: boolean on whether or not to shuffle
     '''
-    # https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
-    def __init__(self, list_IDs, data_dirs, batch_size, shuffle = True):
+    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes,
+                 normalize_mode = "normalize", norm_range = [0,1], shuffle = True):
         # lists of paths to images
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+
+        self.normalize_mode = normalize_mode
+        self.norm_range = norm_range
         self.shuffle = shuffle
         self.indexes = np.arange(len(self.list_IDs))
 
@@ -38,8 +47,8 @@ class BaseGenerator(keras.utils.Sequence):
         # Find list of IDs
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
-        X, y = self.data_gen(list_IDs_temp)
-        return (X, y)
+        X, Y = self.data_gen(list_IDs_temp)
+        return (X, Y)
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -52,32 +61,8 @@ class BaseGenerator(keras.utils.Sequence):
         '''
         Preprocesses the data
         Args:
-            batch_x, batch_y
+            list_IDs_temp: temporary batched list of ids (filenames)
         Returns
             x, y
         '''
         raise NotImplementedError
-
-def docs():
-    """
-    For generator utilies
-    * base keras.utils.Sequence to inherit from
-        * need to add num_images (number of images to sample from)
-            * diff from batch size
-                * getting random indices for this
-    * basic utility functions for different Sequence archetypes
-        * balanced sampling
-        * random sampling
-    * MAKE A FUNCTION TO GET THE INDICES FOR POSITIVE SLICES
-        * then only do computations based on those positive slices
-            * random select index and should be proportional to batch size
-            * threshold; max 2 batches per image? <- make as parameter
-                * so index batch_size/num_slices slices from each scan
-        ******but when random cropping, it won't be positive sooo....
-    def get_positive_idx(label):
-        # gets all the slice indices for positive slices
-        pos_idx = np.nonzero(label)
-        return np.unique(pos_idx[0])
-
-    """
-    pass
