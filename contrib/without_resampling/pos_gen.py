@@ -1,7 +1,7 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
-from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize, sanity_checks, add_channel
+from keras_med_io.utils.io_func import normalization, resample_img, sanity_checks, add_channel
 # from keras_med_io.utils.data_aug_deprecated import *
 
 from random import randint
@@ -21,13 +21,13 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
     * no support for overlap
     """
     def __init__(self,  list_IDs, data_dirs, batch_size, patch_shape,
-                 normalize_mode = 'whitening', range = [0,1], n_channels = 1, shuffle = True):
+                 normalize_mode = 'whitening', norm_range = [0,1], n_channels = 1, shuffle = True):
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
         self.patch_shape = patch_shape
         self.normalize_mode = normalize_mode
-        self.range = range
+        self.norm_range = norm_range
         self.n_channels = n_channels
         self.shuffle = shuffle
 
@@ -64,23 +64,11 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
             # print("before extraction: ", x_train.shape, y_train.shape)
             patch_x, patch_y = self.extract_pos_patches(x_train, y_train, self.patch_shape)
             # print("after extraction: ", patch_x.shape, patch_y.shape)
-            patch_x = self.normalization(patch_x)
+            patch_x = normalization(patch_x, self.normalize_mode, self.norm_range)
             assert sanity_checks(patch_x, patch_y)
             patches_x.append(patch_x), patches_y.append(patch_y)
         # return np.vstack(patches_x), np.vstack(patches_y)
         return (np.stack(patches_x), np.stack(patches_y))
-
-    def normalization(self, patch_x):
-        '''
-        Normalizes the image based on the specified mode and range
-        '''
-        # reiniating the batch_size dimension
-        if self.normalize_mode == 'whitening':
-            return whitening(patch_x)
-        elif self.normalize_mode == 'normalize_clip':
-            return normalize_clip(patch_x, range = self.range)
-        elif self.normalize_mode == 'normalize':
-            return normalize(patch_x, range = self.range)
 
     def extract_pos_patches(self, image, label, patch_shape):
         '''

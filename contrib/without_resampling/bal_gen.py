@@ -1,7 +1,7 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
-from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize, sanity_checks, add_channel
+from keras_med_io.utils.io_func import normalization, resample_img, sanity_checks, add_channel
 # from keras_med_io.utils.data_aug_deprecated import *
 
 from keras_med_io.contrib.without_resampling.pos_gen import PositivePatchGenerator
@@ -12,12 +12,12 @@ from random import randint
 import os
 
 class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
-    '''
+    """
     Adds the option to balance your data based on a specified number of positive patches you want to have in each batch
     New params:
         * n_pos: the number of images in batch to contain a positive class
     ** CHANNELS_LAST
-    ** LOADS DATA WITH Nibabel
+    ** LOADS DATA WITH Nibabel instead of SimpleITK
 
     Attributes:
         list_IDs: list of filenames
@@ -33,16 +33,16 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
         overlap: number of pixel overlap desired for patch overlapping
         n_channels: number of channels
         shuffle: boolean
-    '''
+    """
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
-                 normalize_mode = 'whitening', range = [0,1], n_pos = 1, overlap = 0, n_channels = 1, shuffle = True):
+                 normalize_mode = 'whitening', norm_range = [0,1], n_pos = 1, overlap = 0, n_channels = 1, shuffle = True):
         # lists of paths to images
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
         self.patch_shape = patch_shape
         self.normalize_mode = normalize_mode
-        self.range = range
+        self.norm_range = norm_range
         self.n_pos = n_pos
         self.overlap = overlap
         self.n_channels = n_channels
@@ -54,10 +54,10 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
             self.pos_slice_dict = self.get_pos_slice_dict()
 
     def __getitem__(self, idx):
-        '''
+        """
         Defines the fetching and on-the-fly preprocessing of data.
         Returns a batch of data (x,y)
-        '''
+        """
         # file names
         indexes = self.indexes[idx*self.batch_size:(idx+1)*self.batch_size]
         # Find list of IDs
@@ -79,13 +79,13 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
         return (input_data[out_rand_indices], seg_labels[out_rand_indices])
 
     def data_gen(self, list_IDs_temp, pos_sample):
-        '''
+        """
         generates the data [2D]
         param list_IDs_temp: batched list IDs; usually done by __getitem__
         param pos_sample: boolean on if you want to sample a positive image or not
         Returns:
             tuple of two lists: x, y
-        '''
+        """
         patches_x = []
         patches_y = []
         for id in list_IDs_temp:
@@ -116,7 +116,7 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
             elif not pos_sample:
                 patch_x, patch_y = self.extract_random_patches(x_train, y_train, self.patch_shape)
 
-            patch_x = self.normalization(patch_x)
+            patch_x = normalization(patch_x, self.normalize_mode, self.norm_range)
             assert sanity_checks(patch_x, patch_y)
 
             patches_x.append(patch_x), patches_y.append(patch_y)
@@ -125,15 +125,3 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
         seg_masks = np.stack(patches_y)
         # pos_masks = seg_masks * input_data
         return (input_data, seg_masks)
-
-    def normalization(self, patch_x):
-        '''
-        Normalizes the image based on the specified mode and range
-        '''
-        # reiniating the batch_size dimension
-        if self.normalize_mode == 'whitening':
-            return whitening(patch_x)
-        elif self.normalize_mode == 'normalize_clip':
-            return normalize_clip(patch_x, range = self.range)
-        elif self.normalize_mode == 'normalize':
-            return normalize(patch_x, range = self.range)

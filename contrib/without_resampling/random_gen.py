@@ -1,7 +1,7 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PatchExtractor
-from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize, sanity_checks, add_channel
+from keras_med_io.utils.io_func import normalization, resample_img, sanity_checks, add_channel
 # from keras_med_io.utils.data_aug_deprecated import *
 
 from random import randint
@@ -16,14 +16,14 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
     Need to make compatible with multiple channels
     '''
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
-                 normalize_mode = 'whitening', range = [0,1], overlap = 0, n_channels = 1, shuffle = True):
+                 normalize_mode = 'whitening', norm_range = [0,1], overlap = 0, n_channels = 1, shuffle = True):
         # lists of paths to images
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
         self.patch_shape = patch_shape
         self.normalize_mode = normalize_mode
-        self.range = range
+        self.norm_range = norm_range
         self.overlap = overlap
         self.n_channels = n_channels
         self.shuffle = shuffle
@@ -55,7 +55,7 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
             # choose random patch
             patch_x, patch_y = self.extract_random_patches(x_train, y_train, self.patch_shape)
             # print("patch_x: ", patch_x.shape, "patch_y: ", patch_y.shape)
-            patch_x = self.normalization(patch_x)
+            patch_x = normalization(patch_x, self.normalize_mode, self.norm_range)
             assert sanity_checks(patch_x, patch_y)
             patches_x.append(patch_x), patches_y.append(patch_y)
 
@@ -85,15 +85,3 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
         elif self.ndim == 3:
             x, y = both_crop[:,:, :, :n_channels], both_crop[:, :,:,  n_channels:]
         return x,y
-
-    def normalization(self, patch_x):
-        '''
-        Normalizes the image based on the specified mode and range
-        '''
-        # reiniating the batch_size dimension
-        if self.normalize_mode == 'whitening':
-            return whitening(patch_x)
-        elif self.normalize_mode == 'normalize_clip':
-            return normalize_clip(patch_x, range = self.range)
-        elif self.normalize_mode == 'normalize':
-            return normalize(patch_x, range = self.range)
