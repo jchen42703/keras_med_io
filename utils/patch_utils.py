@@ -1,21 +1,26 @@
 import numpy as np
 
 class PatchExtractor(object):
-    '''
+    """
     Lean patch extractor class.
     Channels_last.
 
     Main Methods:
         .extract_patch(): Extracting either 2D/3D patch
-        .get_centered_patch(): Extracting centered patch around index
-    '''
+    """
     def __init__(self, ndim):
         self.ndim = ndim
 
     def extract_patch(self, data, patch_shape, patch_index):
-        '''
+        """
         Extracting both 2D and 3D patches depending on patch shape dimensions
-        '''
+        Args:
+            data: a numpy array of shape (..., n_channels)
+            patch_shape: a tuple representing the patch shape without the batch_size or the channels dimensions
+            patch_index:
+        Returns:
+            a cropped version of the original image array
+        """
         patch_index = np.asarray(patch_index, dtype = np.int16)
         patch_shape = np.asarray(patch_shape, dtype = np.int16)
 
@@ -26,28 +31,18 @@ class PatchExtractor(object):
         if self.ndim == 2:
             return data[patch_index[0]:patch_index[0]+patch_shape[0], patch_index[1]:patch_index[1]+patch_shape[1], ...]#, ...]
         elif self.ndim == 3:
-            # print("This ran.", "data.shape: ", data.shape)
             return data[patch_index[0]:patch_index[0]+patch_shape[0], patch_index[1]:patch_index[1]+patch_shape[1],
                         patch_index[2]:patch_index[2]+patch_shape[2], ...]
 
-    def get_set_of_patch_indices(self, start, stop, step):
-        '''
-        getting set of all possible indices with the start, stop and step.
-        '''
-        if self.ndim == 2:
-            return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1]].reshape(2, -1).T,
-                             dtype=np.int)
-        elif self.ndim == 3:
-            return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1],
-                                           start[2]:stop[2]:step[2]].reshape(3, -1).T, dtype=np.int)
-
     def compute_patch_indices(self, image_shape, patch_shape, overlap, start=None):
-        '''
+        """
         (no channel)
-        image_shape: ndarray of dimensions
-        patch_shape: ndarray of patch dimensions
-        returns: a np array of coordinates & step
-        '''
+        Args:
+            image_shape: ndarray of dimensions
+            patch_shape: ndarray of patch dimensions
+        Returns:
+            a np array of coordinates & step
+        """
         if isinstance(overlap, int):
             overlap = np.asarray([overlap] * len(image_shape))
         if start is None:
@@ -60,13 +55,26 @@ class PatchExtractor(object):
         step = patch_shape - overlap
         return self.get_set_of_patch_indices(start, stop, step)
 
+    def get_set_of_patch_indices(self, start, stop, step):
+        """
+        getting set of all possible indices with the start, stop and step.
+        """
+        if self.ndim == 2:
+            return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1]].reshape(2, -1).T,
+                             dtype=np.int)
+        elif self.ndim == 3:
+            return np.asarray(np.mgrid[start[0]:stop[0]:step[0], start[1]:stop[1]:step[1],
+                                           start[2]:stop[2]:step[2]].reshape(3, -1).T, dtype=np.int)
+
     def fix_out_of_bound_patch_attempt(self, data, patch_shape, patch_index):
         """
         Pads the data and alters the corner patch index so that the patch will be correct.
-        :param data:
-        :param patch_shape:
-        :param patch_index:
-        :return: padded data, fixed patch index
+        Args:
+            data:
+            patch_shape:
+            patch_index:
+        Returns:
+            padded data, fixed patch index
         """
         image_shape = data.shape[:self.ndim]
         # figures out which indices need to be padded; if they're < 0
@@ -74,9 +82,6 @@ class PatchExtractor(object):
         # checking for out of bounds if doing idx+patch shape by replacing the afflicted indices with a kinda random replacement
         pad_after = np.abs(((patch_index + patch_shape) > image_shape) * ((patch_index + patch_shape) - image_shape))
         pad_args = np.stack([pad_before, pad_after], axis=-1)
-        # print('pad_args.tolist: ', pad_args.tolist(), '\nchecking: ', (len(data.shape) - pad_args.shape[0]) + pad_args.tolist())
-        # print('pad_before: ', pad_before, '\npad_after: ', pad_after, '\npad_args: ', pad_args)
-        # print('data_shape: ', data.shape)
         if pad_args.shape[0] < len(data.shape):
             # adding channels dimension to padding ([0,0] so that it's ignored)
             pad_args = pad_args.tolist() + [[0, 0]] * (len(data.shape) - pad_args.shape[0])
@@ -87,16 +92,17 @@ class PatchExtractor(object):
 
     def reconstruct_from_patches(self, patches, patch_indices, data_shape, default_value=0):
         """
-        CHANNELS_FIRST
-
+        [Only works for 3D patches]
         Reconstructs an array of the original shape from the lists of patches and corresponding patch indices. Overlapping
         patches are averaged.
-        :param patches: List of numpy array patches.
-        :param patch_indices: List of indices that corresponds to the list of patches.
-        :param data_shape: Shape of the array from which the patches were extracted.
-        :param default_value: The default value of the resulting data. if the patch coverage is complete, this value will
-        be overwritten.
-        :return: numpy array containing the data reconstructed by the patches.
+        Args:
+            patches: List of numpy array patches.
+            patch_indices: List of indices that corresponds to the list of patches.
+            data_shape: Shape of the array from which the patches were extracted.
+            default_value: The default value of the resulting data. if the patch coverage is complete, this value will
+            be overwritten.
+        Returns:
+            Numpy array containing the data reconstructed by the patches.
         """
         data = np.ones(data_shape) * default_value
         image_shape = data_shape[-3:]
@@ -127,3 +133,92 @@ class PatchExtractor(object):
                 data[averaged_data_index] = (data[averaged_data_index] * count[averaged_data_index] + patch_data[averaged_data_index]) / (count[averaged_data_index] + 1)
             count[patch_index] += 1
         return data
+
+class PosRandomPatchExtractor(PatchExtractor):
+    """
+    Channels_last.
+    Attributes:
+        ndim: integer representing the number of patches
+        pos_sample_intent: boolean on if there is an intent to positively sample patches
+
+    Main Method:
+        extract_posrandom_patches: extracts a positive or random sampled (input, label) patch pair
+    """
+    def __init__(self, ndim, pos_sample_intent = False):
+        super().__init__(ndim = ndim)
+        if pos_sample_intent:
+            if self.ndim == 2:
+                self.pos_slice_dict = self.get_pos_slice_dict()
+
+    def extract_posrandom_patches(self, image, label, patch_shape, pos_sample):
+        """
+        Takes both image and label and gets cropped random patches
+        Args:
+            image: 2D/3D single arr with no batch_size dim
+            label: 2D/3D single arr with no batch_size dim
+            patch_shape: 2D/3D tuple of patch shape without batch_size or n_channels
+        Returns:
+            a tuple of (cropped_image, cropped_label)
+        """
+        both = np.concatenate([image, label], axis = -1)
+        image_shape = image.shape[:self.ndim]
+        n_channels = image.shape[-1]
+        # getting patch index
+        if pos_sample:
+            patch_idx = self.get_positive_idx(label)
+        elif not pos_sample:
+            patch_idx = self.get_random_idx(image_shape, patch_shape)
+        # patch extraction
+        both_crop = self.extract_patch(both, patch_shape, patch_idx)
+        if self.ndim == 2:
+            x, y = both_crop[:,:, :n_channels], both_crop[:, :, n_channels:]
+        elif self.ndim == 3:
+            x, y = both_crop[:,:, :, :n_channels], both_crop[:, :,:,  n_channels:]
+        return x,y
+
+    def get_random_idx(self, image_shape, patch_shape, overlap = 0, start = None):
+        """
+        Gets a random patch index.
+        Args:
+            image_shape:
+            patch_shape:
+            overlap: int representing patch overlap
+            start: (Optional) int representing the beginning pixel offset for patch extraction
+        Returns:
+            A numpy array representing a random patch index
+        """
+        # getting random patch index
+        patch_indices = self.compute_patch_indices(image_shape, patch_shape, overlap, start)
+        rand_idx = patch_indices[np.random.randint(0, patch_indices.shape[0]-1),:]
+        return rand_idx
+
+    def get_positive_idx(self, label, dstack = True):
+        """
+        Gets a random positive patch index.
+        Args:
+            label: one-hot encoded numpy array with the dims (x,y) or (x,y,z)
+            dstack: boolean on whether or not to dstack the pos_idx for patch_idx
+        Returns:
+            A numpy array representing a random positive patch index
+        """
+        pos_idx_dims = np.nonzero(label.squeeze()) # "n_dims" numpy arrays of all possible positive pixel indices for the label
+        if dstack:
+            pos_idx = np.dstack(pos_idx_dims).squeeze()
+            # random selection of patch
+            patch_idx = pos_idx[np.random.randint(0, pos_idx.shape[0]-1), :]
+            return patch_idx
+        else:
+            return pos_idx_dims
+
+
+    def get_pos_slice_dict(self):
+        """
+        Returns a dictionary of all positive class slice indices for images corresponding to their ID
+        """
+        # pos_slice_dict = {}
+        # for id in self.list_IDs:
+        #     # for file_x, file_y in zip(batch_x, batch_y):
+        #     file_y = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().squeeze()
+        #     pos_slice_dict[id] = self.get_positive_idx(file_y)[0]
+        # return pos_slice_dict
+        return NotImplementedError("Please overwrite this when making a generator with 2D positively sampled patches.")
