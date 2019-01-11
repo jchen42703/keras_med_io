@@ -1,7 +1,7 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
-from keras_med_io.utils.patch_utils import PatchExtractor
-from keras_med_io.utils.io_func import normalize_clip, resample_img, whitening, normalize
+from keras_med_io.utils.patch_utils import PosRandomPatchExtractor
+from keras_med_io.utils.io_func import normalization, resample_img, get_multi_class_labels
 # from keras_med_io.utils.data_aug_deprecated import *
 
 import keras
@@ -10,7 +10,7 @@ from SimpleITK import GetArrayFromImage, ReadImage
 from random import randint
 import os
 
-class PositivePatchGenerator(BaseGenerator, PatchExtractor):
+class PositivePatchGenerator(BaseGenerator, RandomPosPatchExtractor):
     """
     Generating patches with only the positive class.
     Attributes:
@@ -20,27 +20,22 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
         patch_shape: tuple of patch shape without the number of channels
         normalize_mode: representing the type of normalization of either
             "normalize": squeezes between the specified range
-            "whitening": mean var standardizes the data
+            "whiten": mean var standardizes the data
             "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
         start: int
-        range: the specified range for normalization
+        norm_range: the specified range for normalization
         shuffle: boolean
     """
     def __init__(self,  list_IDs, data_dirs, batch_size, patch_shape,
-                 normalize_mode = 'whitening', range = [0,1], start = None, shuffle = True):
-        self.list_IDs = list_IDs
-        self.data_dirs = data_dirs
-        self.batch_size = batch_size
+                 normalize_mode = 'whiten', norm_range = [0,1], start = None, shuffle = True):
+        BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
+                               n_channels = n_channels, n_classes = n_classes, normalize_mode = normalize_mode,
+                               norm_range = norm_range, shuffle = shuffle)
         self.patch_shape = patch_shape
-        self.normalize_mode = normalize_mode
-        self.range = range
-        self.shuffle = shuffle
+        self.ndim = len(patch_shape)
         self.indexes = np.arange(len(self.list_IDs))
 
-        self.start = start
-        self.ndim = len(patch_shape)
-
-        if self.ndim == 2:
+        if self.ndim == 2: # to make sure that it only intializes when necessary
             self.pos_slice_dict = self.get_pos_slice_dict()
 
     def data_gen(self, list_IDs_temp):
@@ -72,61 +67,14 @@ class PositivePatchGenerator(BaseGenerator, PatchExtractor):
                 x_train = np.expand_dims(GetArrayFromImage(x_resample), -1).astype(np.float32)
                 y_train = np.expand_dims(GetArrayFromImage(y_resample), -1).astype(np.float32)
             # print("before extraction: ", x_train.shape, y_train.shape)
-            patch_x, patch_y = self.extract_pos_patches(x_train, y_train, self.patch_shape)
+            patch_x, patch_y = self.extract_posrandom_patches(x_train, y_train, self.patch_shape, pos_sample = True)
             # print("after extraction: ", patch_x.shape, patch_y.shape)
-            patch_x = self.normalization(patch_x)
-            assert self.sanity_checks(patch_x, patch_y)
+            patch_x = normalization(patch_x, self.normalize_mode, self.norm_range)
+            if self.n_classes > 2: # no point to run this when binary (foreground/background)
+                patch_y = get_multi_class_labels(patch_y, n_labels = self.n_classes, remove_background = True)
+            assert sanity_checks(patch_x, patch_y)
             patches_x.append(patch_x), patches_y.append(patch_y)
-        # return np.vstack(patches_x), np.vstack(patches_y)
         return (np.stack(patches_x), np.stack(patches_y))
-
-    def normalization(self, patch_x):
-        '''
-        Normalizes the image based on the specified mode and range
-        '''
-        # reiniating the batch_size dimension
-        if self.normalize_mode == 'whitening':
-            return whitening(patch_x)
-        elif self.normalize_mode == 'normalize_clip':
-            return normalize_clip(patch_x, range = self.range)
-        elif self.normalize_mode == 'normalize':
-            return normalize(patch_x, range = self.range)
-
-    def sanity_checks(self, patch_x, patch_y):
-        '''
-        Checks for NaNs, and makes sure that the labels are one-hot encoded
-        '''
-        # sanity checks
-        assert not np.any(np.isnan(patch_x)) and not np.any(np.isnan(patch_y))
-        assert np.array_equal(np.unique(patch_y), np.array([0,1])) or np.array_equal(np.unique(patch_y), np.array([0]))
-        return True
-
-    def extract_pos_patches(self, image, label, patch_shape):
-        '''
-        Extracts a random positive patch from a 2D/3D image/label pair
-        '''
-        both = np.concatenate([image, label], axis = -1)
-        image_shape = image.shape[:self.ndim:]
-        n_channels = image.shape[-1]
-
-        # get random positive index on the fly
-        pos_idx = np.dstack(self.get_positive_idx(label.squeeze())).squeeze()
-        patch_idx = pos_idx[np.random.randint(0, pos_idx.shape[0]-1),:]
-
-        both_crop = self.extract_patch(both, self.patch_shape, patch_idx)
-        # print("both_crop: ", both_crop.shape, "image: ", image.shape, 'ndim', self.ndim)
-        if self.ndim == 2:
-            x, y = both_crop[:,:, :n_channels], both_crop[:, :, n_channels:]
-        elif self.ndim == 3:
-            x, y = both_crop[:,:, :, :n_channels], both_crop[:, :,:,  n_channels:]
-        return x,y
-
-    def get_positive_idx(self, label):
-        '''
-        Returns "n" numpy arrays of all possible positive pixel indices for a specific label, where n is the number of dimensions
-        '''
-        pos_idx = np.nonzero(label)
-        return pos_idx
 
     def get_pos_slice_dict(self):
         '''

@@ -30,21 +30,15 @@ class RandomPatchGenerator(BaseGenerator, PatchExtractor):
         overlap: number of pixel overlap desired for patch overlapping
         shuffle: boolean
     '''
-    def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
-                 normalize_mode = 'whitening', range = [0,1], overlap = 0, shuffle = True):
-        # lists of paths to images
-        self.list_IDs = list_IDs
-        self.data_dirs = data_dirs
-        self.batch_size = batch_size
-        self.ndim = len(patch_shape)
-
+    def __init__(self,  list_IDs, data_dirs, batch_size, patch_shape,
+                 normalize_mode = 'whiten', norm_range = [0,1], overlap = 0, shuffle = True):
+        BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
+                               n_channels = n_channels, n_classes = n_classes, normalize_mode = normalize_mode,
+                               norm_range = norm_range, shuffle = shuffle)
         self.patch_shape = patch_shape
-        self.normalize_mode = normalize_mode
-        self.range = range
-        self.overlap = overlap
+        self.ndim = len(patch_shape)
         self.indexes = np.arange(len(self.list_IDs))
-        self.shuffle = shuffle
-
+        self.overlap = overlap
 
     def data_gen(self, list_IDs_temp):
         '''
