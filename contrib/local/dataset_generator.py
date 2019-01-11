@@ -6,6 +6,8 @@ def docs():
     '''
     Is it better to have the data aug during parsing or during data_gen?
         probs during data_gen
+        Problem is that you can only apply it once and data aug isn't real time
+            is also a limitation of the TF data API as well
     '''
 class DatasetGenerator(BaseGenerator):
     '''
@@ -45,7 +47,7 @@ class DatasetGenerator(BaseGenerator):
 
     def dataset_from_gen(self, number_epochs, batch_size=1,
                                num_parallel_calls=8, mode='train', fraction=0.0,
-                               shuffle_size=100, variance=0.1, compression=None,
+                               shuffle_size=20, buffer_size = 10, variance=0.1, compression=None,
                                multi_GPU=False):
             '''
             Args:
@@ -83,13 +85,13 @@ class DatasetGenerator(BaseGenerator):
             dataset = dataset.apply(
                         tf.contrib.data.shuffle_and_repeat(shuffle_size,
                                                            count=number_epochs))
-            dataset = dataset.apply(
-                        tf.contrib.data.map_and_batch(
-                            map_func=self.parse_image,
-                            num_parallel_batches=num_parallel_calls,
-                            batch_size=batch_size))
+            # dataset = dataset.apply(
+            #             tf.contrib.data.map_and_batch(
+            #                 map_func=self.parse_image,
+            #                 num_parallel_batches=num_parallel_calls,
+            #                 batch_size=batch_size))
 
-            dataset = dataset.prefetch(buffer_size=None)
+            dataset = dataset.prefetch(buffer_size=buffer_size)
 
             if multi_GPU:
                 return dataset
