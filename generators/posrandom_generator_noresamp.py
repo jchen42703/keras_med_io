@@ -2,7 +2,7 @@ import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PosRandomPatchExtractor
 from keras_med_io.utils.io_func import normalization, sanity_checks, add_channel, get_multi_class_labels
-from keras_med_io.local.helperfunc import transforms
+from keras_med_io.contrib.local.helperfunc import transforms
 import nibabel as nib
 from random import randint
 import os
