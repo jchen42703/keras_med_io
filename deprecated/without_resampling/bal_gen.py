@@ -34,23 +34,18 @@ class BalancedPatchGenerator(PositivePatchGenerator, RandomPatchGenerator):
         n_channels: number of channels
         shuffle: boolean
     """
-    def __init__(self, list_IDs, data_dirs, batch_size, patch_shape = (64,64),
-                 normalize_mode = 'whitening', norm_range = [0,1], n_pos = 1, overlap = 0, n_channels = 1, shuffle = True):
-        # lists of paths to images
-        self.list_IDs = list_IDs
-        self.data_dirs = data_dirs
-        self.batch_size = batch_size
-        self.patch_shape = patch_shape
-        self.normalize_mode = normalize_mode
-        self.norm_range = norm_range
+    def __init__(self, list_IDs, data_dirs, batch_size, patch_shape, n_channels, n_classes,
+                 normalize_mode = 'whiten', norm_range = [0,1], n_pos = 1, overlap = 0, n_channels = 1, shuffle = True):
+        PositivePatchGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
+                               patch_shape = patch_shape, n_channels = n_channels, n_classes = n_classes, normalize_mode = normalize_mode,
+                               norm_range = norm_range, shuffle = shuffle)
+        self.ndim = len(patch_shape)
+        self.indexes = np.arange(len(self.list_IDs))
         self.n_pos = n_pos
         self.overlap = overlap
         self.n_channels = n_channels
-        self.shuffle = shuffle
 
-        self.indexes = np.arange(len(self.list_IDs))
-        self.ndim = len(patch_shape)
-        if self.ndim == 2:
+        if self.ndim == 2: # to make sure that it only intializes when necessary
             self.pos_slice_dict = self.get_pos_slice_dict()
 
     def __getitem__(self, idx):
