@@ -34,7 +34,7 @@ def get_patch_from_3d_data(data, patch_shape, patch_index):
     patch_shape = np.asarray(patch_shape)
     image_shape = data.shape[-3:]
     if np.any(patch_index < 0) or np.any((patch_index + patch_shape) > image_shape):
-        data, patch_index = fix_out_of_bound_patch_attempt(data, patch_shape, patch_index)
+        data, patch_index = fix_out_of_bound_patch_attempt(data, patch_shape, patch_index, ndim = 3)
     return data[..., patch_index[0]:patch_index[0]+patch_shape[0], patch_index[1]:patch_index[1]+patch_shape[1],
                 patch_index[2]:patch_index[2]+patch_shape[2]]
 
