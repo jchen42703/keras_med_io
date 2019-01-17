@@ -39,7 +39,7 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
     """
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape, n_channels, n_classes,
                  normalize_mode = "normalize", norm_range = [0,1], mode = "bal", n_pos = 1, overlap = 0,
-                 shuffle = True):
+                 data_aug = False, shuffle = True):
 
         BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, normalize_mode = normalize_mode,
@@ -50,6 +50,7 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         self.n_pos = n_pos
         self.overlap = overlap
         self.indexes = np.arange(len(self.list_IDs))
+        self.data_aug = data_aug
         if self.ndim == 2 and not self.mode == "rand": # to make sure that it only intializes when necessary
             self.pos_slice_dict = self.get_pos_slice_dict()
         if self.mode == "bal" and self.n_pos < 1:
@@ -125,9 +126,10 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
             assert sanity_checks(patch_x, patch_y)
 
             patches_x.append(patch_x), patches_y.append(patch_y)
-
-        input_data = np.stack(patches_x)
-        seg_masks = np.stack(patches_y)
+        input_data, seg_masks = np.stack(patches_x), np.stack(patches_y)
+        # data augmentation
+        if self.data_aug:
+            input_data, seg_masks = transforms(image, mask, n_dim = self.ndim , fraction_ = 0.2, variance_ = 0.1)
         return (input_data, seg_masks)
 
     def get_pos_slice_dict(self):
