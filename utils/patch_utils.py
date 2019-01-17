@@ -138,14 +138,16 @@ class PosRandomPatchExtractor(PatchExtractor):
     """
     Channels_last.
     Attributes:
-        ndim: integer representing the number of patches
+        ndim: integer representing the number of patches\
+        overlap: int representing the amount of patch overlap (default: 0)
         pos_sample_intent: boolean on if there is an intent to positively sample patches
 
     Main Method:
         extract_posrandom_patches: extracts a positive or random sampled (input, label) patch pair
     """
-    def __init__(self, ndim, pos_sample_intent = False):
+    def __init__(self, ndim, overlap = 0, pos_sample_intent = False):
         super().__init__(ndim = ndim)
+        self.overlap = overlap
         if pos_sample_intent:
             if self.ndim == 2:
                 self.pos_slice_dict = self.get_pos_slice_dict()
@@ -176,19 +178,18 @@ class PosRandomPatchExtractor(PatchExtractor):
             x, y = both_crop[:,:, :, :n_channels], both_crop[:, :,:,  n_channels:]
         return x,y
 
-    def get_random_idx(self, image_shape, patch_shape, overlap = 0, start = None):
+    def get_random_idx(self, image_shape, patch_shape, start = None):
         """
         Gets a random patch index.
         Args:
             image_shape:
             patch_shape:
-            overlap: int representing patch overlap
             start: (Optional) int representing the beginning pixel offset for patch extraction
         Returns:
             A numpy array representing a random patch index
         """
         # getting random patch index
-        patch_indices = self.compute_patch_indices(image_shape, patch_shape, overlap, start)
+        patch_indices = self.compute_patch_indices(image_shape, patch_shape, self.overlap, start)
         rand_idx = patch_indices[np.random.randint(0, patch_indices.shape[0]-1),:]
         return rand_idx
 
@@ -201,7 +202,11 @@ class PosRandomPatchExtractor(PatchExtractor):
         Returns:
             A numpy array representing a random positive patch index
         """
-        pos_idx_dims = np.nonzero(label.squeeze()) # "n_dims" numpy arrays of all possible positive pixel indices for the label
+        try:
+            assert len(label.shape) == self.ndim + 1 # assumes that thel label has the n_channels dimensions
+        except AssertionError:
+            label = np.expand_dims(label, axis = -1) # adds the channel dim if it doesn't already have it
+        pos_idx_dims = np.nonzero(label)[:-1] # "n_dims" numpy arrays of all possible positive pixel indices for the label
         if dstack:
             pos_idx = np.dstack(pos_idx_dims).squeeze()
             # random selection of patch
@@ -209,7 +214,6 @@ class PosRandomPatchExtractor(PatchExtractor):
             return patch_idx
         else:
             return pos_idx_dims
-
 
     def get_pos_slice_dict(self):
         """
