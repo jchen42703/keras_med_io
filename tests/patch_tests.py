@@ -21,20 +21,21 @@ class PatchTest(unittest.TestCase):
         self.patch_shape_3D = np.asarray((128,128,128))
         self.train_image_3D = np.zeros(self.image_shape_3D)
         self.label_image_3D = np.ones(self.image_shape_3D)
-        self.overlap = 0
+        self.overlap = 15
 
         self.extractor_2D_last = PatchExtractor(ndim = 2)
         self.extractor_3D_last = PatchExtractor(ndim = 3)
-        self.extractor_posrandom_2D = PosRandomPatchExtractor(ndim = 2, pos_sample_intent = False)
-        self.extractor_posrandom_3D = PosRandomPatchExtractor(ndim = 3, pos_sample_intent = True)
+        self.extractor_posrandom_2D = PosRandomPatchExtractor(ndim = 2, overlap = self.overlap, pos_sample_intent = False)
+        self.extractor_posrandom_3D = PosRandomPatchExtractor(ndim = 3, overlap = self.overlap, pos_sample_intent = True)
 
     def test_compute_patch_indices(self):
         """
         Tests the utility function to make sure it returns the correct dimensions
         """
+        n_dims = 2
         patch_indices = self.extractor_2D_last.compute_patch_indices(self.image_shape_2D[:-1], self.patch_shape_2D,
                                                                      self.overlap)
-        self.assertEqual(patch_indices.shape[1], 2)
+        self.assertEqual(patch_indices.shape[1], n_dims)
 
     def test_2D_patch_extraction(self):
         """
@@ -73,7 +74,7 @@ class PatchTest(unittest.TestCase):
 
     def test_posrandom_extraction_3D(self):
         """
-        Testing that both pos_sample = True and pos_sample = False work for the PosRandomPatchExtractor class in 3D images 
+        Testing that both pos_sample = True and pos_sample = False work for the PosRandomPatchExtractor class in 3D images
         (with the channels dim)
         """
         # testing channels_last extraction
