@@ -120,16 +120,16 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
                                                             shape (x,y, n_channels) or (x, y, z, n_channels)"
             patch_x, patch_y = self.extract_posrandom_patches(x_train, y_train, self.patch_shape, pos_sample)
             patch_x = normalization(patch_x, self.normalize_mode, self.norm_range)
-
             if self.n_classes > 2: # no point to run this when binary (foreground/background)
                 patch_y = get_multi_class_labels(patch_y, n_labels = self.n_classes, remove_background = True)
             assert sanity_checks(patch_x, patch_y)
 
             patches_x.append(patch_x), patches_y.append(patch_y)
+
         input_data, seg_masks = np.stack(patches_x), np.stack(patches_y)
         # data augmentation
         if self.data_aug:
-            input_data, seg_masks = transforms(image, mask, n_dim = self.ndim , fraction_ = 0.2, variance_ = 0.1)
+            input_data, seg_masks = transforms(input_data, seg_masks, n_dim = self.ndim , fraction_ = 0.2, variance_ = 0.1)
         return (input_data, seg_masks)
 
     def get_pos_slice_dict(self):
