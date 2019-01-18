@@ -1,4 +1,4 @@
-from keras_med_io.contrib.posrandom_generator.posrandom_generator_noresamp import PosRandomPatchGenerator
+from keras_med_io.generators.posrandom_generator_noresamp import PosRandomPatchGenerator
 
 import unittest
 import os
@@ -31,8 +31,9 @@ class GeneratorTest(unittest.TestCase):
         Tests shapes for 2D random patch generation from the PosRandomPatchGenerator.
         """
         # instantiating generators
+        mode = "rand"
         rand_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = "rand",)
+                                               self.n_channels, self.n_classes, mode = mode,)
         # testing their output shapes
         x_2, y_2 = rand_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -43,8 +44,9 @@ class GeneratorTest(unittest.TestCase):
         Tests shapes for 3D random patch generation from the PosRandomPatchGenerator.
         """
         # instantiating generators
+        mode = "rand"
         rand_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = "rand",)
+                                               self.n_channels, self.n_classes, mode = mode,)
         # testing their output shapes
         x_3, y_3 = rand_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
@@ -55,8 +57,9 @@ class GeneratorTest(unittest.TestCase):
         Tests shapes for 2D random positive patch generation from the PosRandomPatchGenerator.
         """
         # instantiating generators
+        mode = "pos"
         pos_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = "pos",)
+                                               self.n_channels, self.n_classes, mode = mode,)
         #testing their output shapes
         x_2, y_2 = pos_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -66,9 +69,28 @@ class GeneratorTest(unittest.TestCase):
         """
         Tests shapes for 3D random positive patch generation from the PosRandomPatchGenerator.
         """
+        mode = "pos"
         pos_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = "pos",)
+                                               self.n_channels, self.n_classes, mode = mode,)
         x_3, y_3 = pos_gen_3D.__getitem__(1)
+        assert x_3.shape == y_3.shape
+        self.assertEqual(x_3.shape, self.output_shape_3D)
+
+    def test_bal_patch_2D(self):
+        # instantiating generators
+        mode = "bal"
+        bal_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
+                                               self.n_channels, self.n_classes, mode = mode,)
+        #testing their output shapes
+        x_2, y_2 = bal_gen_2D.__getitem__(1)
+        assert x_2.shape == y_2.shape
+        self.assertEqual(x_2.shape, self.output_shape_2D)
+
+    def test_bal_patch_3D(self):
+        mode = "bal"
+        bal_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
+                                               self.n_channels, self.n_classes, mode = mode,)
+        x_3, y_3 = bal_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
         self.assertEqual(x_3.shape, self.output_shape_3D)
 
