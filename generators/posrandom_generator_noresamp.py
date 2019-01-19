@@ -1,8 +1,7 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PosRandomPatchExtractor
-from keras_med_io.utils.io_func import normalization, sanity_checks, add_channel, get_multi_class_labels
-from keras_med_io.contrib.local.helperfunc import transforms
+from keras_med_io.utils.io_func import normalization, sanity_checks, add_channel, get_multi_class_labels, transforms
 import nibabel as nib
 from random import randint
 import os
@@ -123,13 +122,14 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
             if self.n_classes > 2: # no point to run this when binary (foreground/background)
                 patch_y = get_multi_class_labels(patch_y, n_labels = self.n_classes, remove_background = True)
             assert sanity_checks(patch_x, patch_y)
-
+            # data augmentation
             patches_x.append(patch_x), patches_y.append(patch_y)
 
         input_data, seg_masks = np.stack(patches_x), np.stack(patches_y)
         # data augmentation
         if self.data_aug:
-            input_data, seg_masks = transforms(input_data, seg_masks, n_dim = self.ndim , fraction_ = 0.2, variance_ = 0.1)
+            input_data, seg_masks = transforms(input_data, seg_masks, ndim = self.ndim ,
+                                               fraction_ = 0.2, variance_ = (0, 0.1))
         return (input_data, seg_masks)
 
     def get_pos_slice_dict(self):
