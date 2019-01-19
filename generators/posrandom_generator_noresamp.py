@@ -22,23 +22,26 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         patch_shape: tuple of patch shape without the number of channels
         n_channels: number of channels
         n_classes: number of classes for one hot encoding (>=2)
-        normalize_mode: representing the type of normalization of either
+
+        normalize_mode: representing the type of normalization of either (optional, default: "normalize")
             "normalize": squeezes between the specified range
             "whiten": mean var standardizes the data
             "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
-        norm_range: the specified range for normalization
-
-        mode: specifying which type of data generation
+        norm_range: the specified range for normalization (optional, default: [0,1])
+        mode: specifying which type of data generation (optional, default: "bal")
             "bal": generating a mixed batch of random/pos patches based on n_pos; n_pos > 0
             "rand": generating only random patches
             "pos": generating only positive patches
-        n_pos: int representing the number of positive samples in a batch
-        overlap: number of pixel overlap desired for patch overlapping
+        n_pos: int representing the number of positive samples in a batch (optional, default: 1)
+        overlap: number of pixel overlap desired for patch overlapping (optional, default: 0)
+        data_aug: boolean representing if you want to have data augmmentation or not (optional, default: False)
+        transforms_args: a dictionary mapping the "keras_med_io.utils.io_func.transforms" arguments to the desired values
+            It should not include volume, segmentation, and ndim as arguments. (optional)
         shuffle: boolean
     """
     def __init__(self, list_IDs, data_dirs, batch_size, patch_shape, n_channels, n_classes,
                  normalize_mode = "normalize", norm_range = [0,1], mode = "bal", n_pos = 1, overlap = 0,
-                 data_aug = False, shuffle = True):
+                 data_aug = False, transforms_args = {}, shuffle = True):
 
         BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, normalize_mode = normalize_mode,
@@ -50,6 +53,7 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         self.overlap = overlap
         self.indexes = np.arange(len(self.list_IDs))
         self.data_aug = data_aug
+        self.transforms_args = transforms_args
         if self.ndim == 2 and not self.mode == "rand": # to make sure that it only intializes when necessary
             self.pos_slice_dict = self.get_pos_slice_dict()
         if self.mode == "bal" and self.n_pos < 1:
@@ -128,8 +132,7 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         input_data, seg_masks = np.stack(patches_x), np.stack(patches_y)
         # data augmentation
         if self.data_aug:
-            input_data, seg_masks = transforms(input_data, seg_masks, ndim = self.ndim ,
-                                               fraction_ = 0.2, variance_ = (0, 0.1))
+            input_data, seg_masks = transforms(input_data, seg_masks, ndim = self.ndim, **self.transforms_args)
         return (input_data, seg_masks)
 
     def get_pos_slice_dict(self):
