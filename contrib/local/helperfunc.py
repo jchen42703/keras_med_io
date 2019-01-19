@@ -5,7 +5,7 @@ import pickle
 import collections
 import logging
 
-from keras_med_io.batchgenerators.augmentations.resample_augmentations import augment_linear_downsampling_scipy
+# from keras_med_io.batchgenerators.augmentations.resample_augmentations import augment_linear_downsampling_scipy
 from keras_med_io.batchgenerators.augmentations.spatial_transformations \
     import augment_spatial_nocrop
 from keras_med_io.batchgenerators.augmentations.noise_augmentations \
