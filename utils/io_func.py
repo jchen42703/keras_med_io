@@ -18,15 +18,24 @@ def to_do():
     """
     return ()
 
-def transforms(volume, segmentation, ndim, fraction_,
-               variance_, data_format_in = "channels_last"):
+def transforms(volume, segmentation, ndim, variance = (0, 0),  elastic_deform = True,
+               scale = True, rotate = True, data_format_in = "channels_last"):
     """
     Does data aug
     Random elastic deformations, random scaling, random rotations, gaussian noise
     * Assumes a batch size dimension.
+    Args:
+        volume:
+        segmentation:
+        ndim:
+        variance: sequence of the variance range for gaussian noise (optional; default: (0,0))
+        elastic_deform: boolean on whether or not to apply random elastic deformations (optional; default: True)
+        scale: boolean on whether to scale the image or not (optional; default: True)
+        rotate: boolean on whether to rotate the image or not (optional; default = True)
+        data_format_in: either "channels_last" or "channels_first"
     """
     # converts data to channels_first
-    if data_format_in == "channels_last": # assumes no batch_size dim
+    if data_format_in.lower() == "channels_last": # assumes no batch_size dim
         if ndim == 2:
             to_channels_first = [0,-1,1,2]
         elif ndim == 3:
@@ -38,20 +47,19 @@ def transforms(volume, segmentation, ndim, fraction_,
                                     volume,
                                     segmentation,
                                     ndim,
-                                    border_mode_data='constant',
-                                    alpha=(0, 750),
-                                    sigma=(10, 13),
-                                    scale=(0.8, 1.2),
-                                    do_elastic_deform=True,
-                                    do_scale=True,
-                                    do_rotation=True,
-                                    angle_x=(0, 2*np.pi),
-                                    angle_y=(0, 0),
-                                    angle_z=(0, 0),)
-                                    # fraction=fraction_)
-                                    #spacing=spacing_)
-    if np.any(variance_ != 0):
-        volume = augment_gaussian_noise(volume, noise_variance=variance_)
+                                    border_mode_data = 'constant',
+                                    alpha = (0, 750),
+                                    sigma = (10, 13),
+                                    scale = (0.8, 1.2),
+                                    do_elastic_deform = elastic_deform,
+                                    do_scale = scale,
+                                    do_rotation = rotate,
+                                    angle_x = (0, 2*np.pi),
+                                    angle_y = (0, 0),
+                                    angle_z = (0, 0),)
+
+    if np.any(variance != 0):
+        volume = augment_gaussian_noise(volume, noise_variance = variance)
     # converts data to channels_last
     if ndim == 2:
         to_channels_last = [0,2,3,1]
