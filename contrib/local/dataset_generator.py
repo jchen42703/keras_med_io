@@ -1,5 +1,5 @@
 from keras_med_io.utils.gen_utils import BaseGenerator
-from keras_med_io.local.helperfunc import transforms
+from keras_med_io.utils.io_func import transforms
 import tensorflow as tf
 
 def docs():

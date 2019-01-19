@@ -6,10 +6,10 @@ import collections
 import logging
 
 # from keras_med_io.batchgenerators.augmentations.resample_augmentations import augment_linear_downsampling_scipy
-from keras_med_io.batchgenerators.augmentations.spatial_transformations \
-    import augment_spatial_nocrop
-from keras_med_io.batchgenerators.augmentations.noise_augmentations \
-    import augment_gaussian_noise
+# from keras_med_io.batchgenerators.augmentations.spatial_transformations \
+#     import augment_spatial_nocrop
+# from keras_med_io.batchgenerators.augmentations.noise_augmentations \
+#     import augment_gaussian_noise
 
 ######## TFRecordDataset Funcs #######
 
@@ -21,47 +21,47 @@ def write_json(f, fpath):
     with open(fpath, 'w') as fp:
         return(json.dump(f, fp))
 
-def transforms(volume, segmentation, n_dim, fraction_,
-               variance_, data_format_in = "channels_last"):
-    '''
-    Does data aug
-    Random elastic deformations, random scaling, random rotations, gaussian noise
-    '''
-    # converts data to channels_first
-    if data_format_in == "channels_last": # assumes no batch_size dim
-        if n_dim == 2:
-            to_channels_first = [-1,0,1]
-        elif n_dim == 3:
-            to_channels_first = [-1,0,1,2]
-        volume = np.transpose(volume, to_channels_first)
-        segmentation = np.transpose(segmentation, to_channels_first)
-
-    volume, segmentation = augment_spatial_nocrop(
-                                    volume,
-                                    segmentation,
-                                    n_dim,
-                                    border_mode_data='constant',
-                                    alpha=(0, 750),
-                                    sigma=(10, 13),
-                                    scale=(0.8, 1.2),
-                                    do_elastic_deform=True,
-                                    do_scale=True,
-                                    do_rotation=True,
-                                    angle_x=(0, 2*np.pi),
-                                    angle_y=(0, 0),
-                                    angle_z=(0, 0),
-                                    fraction=fraction_)
-                                    #spacing=spacing_)
-    if np.any(variance_ != 0):
-        volume = augment_gaussian_noise(volume, noise_variance=variance_)
-    # converts data to channels_last
-    if n_dim == 2:
-        to_channels_last = [1,2,0]
-    elif n_dim == 3:
-        to_channels_last = [1,2,3,0]
-    volume = np.transpose(volume, to_channels_last)
-    segmentation = np.transpose(segmentation, to_channels_last)
-    return volume, segmentation
+# def transforms(volume, segmentation, n_dim, fraction_,
+#                variance_, data_format_in = "channels_last"):
+#     '''
+#     Does data aug
+#     Random elastic deformations, random scaling, random rotations, gaussian noise
+#     '''
+#     # converts data to channels_first
+#     if data_format_in == "channels_last": # assumes no batch_size dim
+#         if n_dim == 2:
+#             to_channels_first = [-1,0,1]
+#         elif n_dim == 3:
+#             to_channels_first = [-1,0,1,2]
+#         volume = np.transpose(volume, to_channels_first)
+#         segmentation = np.transpose(segmentation, to_channels_first)
+#
+#     volume, segmentation = augment_spatial_nocrop(
+#                                     volume,
+#                                     segmentation,
+#                                     n_dim,
+#                                     border_mode_data='constant',
+#                                     alpha=(0, 750),
+#                                     sigma=(10, 13),
+#                                     scale=(0.8, 1.2),
+#                                     do_elastic_deform=True,
+#                                     do_scale=True,
+#                                     do_rotation=True,
+#                                     angle_x=(0, 2*np.pi),
+#                                     angle_y=(0, 0),
+#                                     angle_z=(0, 0),
+#                                     fraction=fraction_)
+#                                     #spacing=spacing_)
+#     if np.any(variance_ != 0):
+#         volume = augment_gaussian_noise(volume, noise_variance=variance_)
+#     # converts data to channels_last
+#     if n_dim == 2:
+#         to_channels_last = [1,2,0]
+#     elif n_dim == 3:
+#         to_channels_last = [1,2,3,0]
+#     volume = np.transpose(volume, to_channels_last)
+#     segmentation = np.transpose(segmentation, to_channels_last)
+#     return volume, segmentation
 
 def distribution_strategy(num_gpus):
     if num_gpus == 1:

@@ -3,7 +3,8 @@ import numpy as np
 import os
 import argparse
 import logging
-from keras_med_io.local.helperfunc import *
+from keras_med_io.contrib.local.helperfunc import *
+from keras_med_io.utils.io_func import transforms
 from glob import glob
 
 def _int64_feature(value):

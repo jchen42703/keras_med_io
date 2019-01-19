@@ -6,12 +6,61 @@ from glob import glob
 import SimpleITK as sitk
 import numpy as np
 
+from keras_med_io.batchgenerators.augmentations.spatial_transformations \
+    import augment_spatial_nocrop
+from keras_med_io.batchgenerators.augmentations.noise_augmentations \
+    import augment_gaussian_noise
+
 def to_do():
     """
     * histogram_normalization
     * resample for multiple channels with nibabel
     """
     return ()
+
+def transforms(volume, segmentation, ndim, fraction_,
+               variance_, data_format_in = "channels_last"):
+    """
+    Does data aug
+    Random elastic deformations, random scaling, random rotations, gaussian noise
+    * Assumes a batch size dimension.
+    """
+    # converts data to channels_first
+    if data_format_in == "channels_last": # assumes no batch_size dim
+        if ndim == 2:
+            to_channels_first = [0,-1,1,2]
+        elif ndim == 3:
+            to_channels_first = [0,-1,1,2,3]
+        volume = np.transpose(volume, to_channels_first)
+        segmentation = np.transpose(segmentation, to_channels_first)
+
+    volume, segmentation = augment_spatial_nocrop(
+                                    volume,
+                                    segmentation,
+                                    ndim,
+                                    border_mode_data='constant',
+                                    alpha=(0, 750),
+                                    sigma=(10, 13),
+                                    scale=(0.8, 1.2),
+                                    do_elastic_deform=True,
+                                    do_scale=True,
+                                    do_rotation=True,
+                                    angle_x=(0, 2*np.pi),
+                                    angle_y=(0, 0),
+                                    angle_z=(0, 0),)
+                                    # fraction=fraction_)
+                                    #spacing=spacing_)
+    if np.any(variance_ != 0):
+        volume = augment_gaussian_noise(volume, noise_variance=variance_)
+    # converts data to channels_last
+    if ndim == 2:
+        to_channels_last = [0,2,3,1]
+    elif ndim == 3:
+        to_channels_last = [0,2,3,4,1]
+    volume = np.transpose(volume, to_channels_last)
+    segmentation = np.transpose(segmentation, to_channels_last)
+    return volume, segmentation
+
 
 # helper functions
 def normalization(arr, normalize_mode, norm_range = [0,1]):
