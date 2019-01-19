@@ -27,7 +27,7 @@ from keras_med_io.batchgenerators.augmentations.crop_and_pad_augmentations impor
 from keras_med_io.batchgenerators.augmentations.crop_and_pad_augmentations import center_crop as center_crop_aug
 
 ## CUSTOM
-def augment_spatial_nocrop(data, seg,
+def augment_spatial_nocrop(data, seg, ndim,
                     do_elastic_deform=True, alpha=(0., 1000.), sigma=(10., 13.),
                     do_rotation=True, angle_x=(0, 2 * np.pi), angle_y=(0, 2 * np.pi), angle_z=(0, 2 * np.pi),
                     do_scale=True, scale=(0.75, 1.25), border_mode_data='nearest', border_cval_data=0, order_data=3,
@@ -41,7 +41,7 @@ def augment_spatial_nocrop(data, seg,
         * Note: could just leave it as is and just transpose the inputs/output
     '''
     base_shape = data.shape[2:] # assumes channels_first
-    assert n_dim == len(base_shape), "The number of dimensions should not include the batch size or the n_channels."
+    assert ndim == len(base_shape), "The number of dimensions should not include the batch size or the n_channels."
     seg_result = None
 
     if seg is not None:
@@ -65,7 +65,7 @@ def augment_spatial_nocrop(data, seg,
                 a_x = angle_x[0]
             else:
                 a_x = np.random.uniform(angle_x[0], angle_x[1])
-            if dim == 3:
+            if ndim == 3:
                 if angle_y[0] == angle_y[1]:
                     a_y = angle_y[0]
                 else:
