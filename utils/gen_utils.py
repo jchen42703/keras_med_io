@@ -5,7 +5,7 @@ import os
 
 class BaseGenerator(keras.utils.Sequence):
     '''
-    Basic framework for generating 2D thread-safe data in keras. (no preprocessing and channels_last)
+    Basic framework for generating thread-safe data in keras. (no preprocessing and channels_last)
     Based on https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
 
     Attributes:
@@ -14,24 +14,14 @@ class BaseGenerator(keras.utils.Sequence):
       batch_size: int of desired number images per epoch
       n_channels: <-
       n_classes: <-
-      normalize_mode: representing the type of normalization of either
-          "normalize": squeezes between the specified range
-          "whiten": mean var standardizes the data
-          "normalize_clip": mean-var standardizes the data, then clips between [-5, 5], and squeezes the pixel values between the specified norm range
-      norm_range: the specified range for normalization
-      shuffle: boolean on whether or not to shuffle
     '''
-    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes,
-                 normalize_mode = "normalize", norm_range = [0,1], shuffle = True):
+    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, shuffle = True):
         # lists of paths to images
         self.list_IDs = list_IDs
         self.data_dirs = data_dirs
         self.batch_size = batch_size
         self.n_channels = n_channels
         self.n_classes = n_classes
-
-        self.normalize_mode = normalize_mode
-        self.norm_range = norm_range
         self.shuffle = shuffle
         self.indexes = np.arange(len(self.list_IDs))
 
