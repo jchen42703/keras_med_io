@@ -1,5 +1,5 @@
-from keras_med_io.generators.posrandom_generator_noresamp import PosRandomPatchGenerator
-
+# from keras_med_io.generators.posrandom_generator_noresamp import PosRandomPatchGenerator
+from keras_med_io.generators.general import *
 import unittest
 import os
 
@@ -25,6 +25,7 @@ class GeneratorTest(unittest.TestCase):
         self.output_shape_3D = (self.batch_size, 128, 128, 128, 1)
         self.n_channels = self.output_shape_2D[-1]
         self.n_classes = 2
+        self.overlap = int(round(self.patch_shape_2D[0] / 2))
 
     def test_random_patch_2D(self):
         """
@@ -33,7 +34,7 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "rand"
         rand_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         # testing their output shapes
         x_2, y_2 = rand_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -46,7 +47,7 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "rand"
         rand_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         # testing their output shapes
         x_3, y_3 = rand_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
@@ -59,7 +60,7 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "pos"
         pos_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         #testing their output shapes
         x_2, y_2 = pos_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -71,7 +72,7 @@ class GeneratorTest(unittest.TestCase):
         """
         mode = "pos"
         pos_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         x_3, y_3 = pos_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
         self.assertEqual(x_3.shape, self.output_shape_3D)
@@ -84,7 +85,7 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "bal"
         bal_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         #testing their output shapes
         x_2, y_2 = bal_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -97,7 +98,7 @@ class GeneratorTest(unittest.TestCase):
         """
         mode = "bal"
         bal_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = mode,)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,)
         x_3, y_3 = bal_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
         self.assertEqual(x_3.shape, self.output_shape_3D)
@@ -110,7 +111,8 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "rand"
         rand_gen_2D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_2D,
-                                               self.n_channels, self.n_classes, mode = mode, data_aug = True)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,
+                                               transforms_args = {})
         # testing their output shapes
         x_2, y_2 = rand_gen_2D.__getitem__(1)
         assert x_2.shape == y_2.shape
@@ -124,7 +126,8 @@ class GeneratorTest(unittest.TestCase):
         # instantiating generators
         mode = "rand"
         rand_gen_3D = PosRandomPatchGenerator(self.list_IDs, self.data_dirs, self.batch_size, self.patch_shape_3D,
-                                               self.n_channels, self.n_classes, mode = mode, data_aug = True)
+                                               self.n_channels, self.n_classes, mode = mode, overlap = self.overlap,
+                                               transforms_args = {})
         # testing their output shapes
         x_3, y_3 = rand_gen_3D.__getitem__(1)
         assert x_3.shape == y_3.shape
