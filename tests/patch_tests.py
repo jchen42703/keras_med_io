@@ -21,7 +21,7 @@ class PatchTest(unittest.TestCase):
         self.patch_shape_3D = np.asarray((128,128,128))
         self.train_image_3D = np.zeros(self.image_shape_3D)
         self.label_image_3D = np.ones(self.image_shape_3D)
-        self.overlap = 15
+        self.overlap = int(round(self.patch_shape_2D[0] / 2))
 
         self.extractor_2D_last = PatchExtractor(ndim = 2)
         self.extractor_3D_last = PatchExtractor(ndim = 3)
