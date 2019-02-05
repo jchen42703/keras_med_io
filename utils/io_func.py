@@ -1,9 +1,7 @@
-
 # coding: utf-8
 # funcions for quick testing
 import os
 from glob import glob
-import SimpleITK as sitk
 import numpy as np
 
 from keras_med_io.batchgenerators.augmentations.spatial_transformations \
@@ -101,8 +99,6 @@ def normalize_clip(arr, norm_range = [0,1]):
         Whitened and normalized array with outliers clipped in the specified range
     """
     # whitens -> clips -> scales to [0,1]
-    if isinstance(arr,sitk.Image):
-        arr = sitk.GetArrayFromImage(arr)
     # whiten
     norm_img = np.clip(whiten(arr), -5, 5)
     norm_img = minmax_normalize(arr, norm_range)
@@ -133,57 +129,6 @@ def minmax_normalize(arr, norm_range = [0,1]):
     """
     norm_img = ((norm_range[1]-norm_range[0]) * (arr - np.amin(arr)) / (np.amax(arr) - np.amin(arr))) + norm_range[0]
     return norm_img
-
-def resample_img(itk_image, out_spacing=[1.0, 1.0, 1.0], is_label=False):
-    """
-    Resamples a SimpleITK image to the desired voxel spacing.
-    Args:
-        itk_image: a 2D/3D SimpleITK image
-        out_spacing: a list of the spacing
-        is_label: boolean on whether the itk_image is a label
-    Returns:
-        a resample SimpleITK image
-    """
-    if isinstance(itk_image, np.ndarray):
-        itk_image = sitk.GetImageFromArray(itk_image)
-    # Resample images to 2mm spacing with SimpleITK
-    original_spacing = itk_image.GetSpacing()
-    original_size = itk_image.GetSize()
-
-    out_size = [
-        int(np.round(original_size[0] * (original_spacing[0] / out_spacing[0]))),
-        int(np.round(original_size[1] * (original_spacing[1] / out_spacing[1]))),
-        int(np.round(original_size[2] * (original_spacing[2] / out_spacing[2])))]
-
-    resample = sitk.ResampleImageFilter()
-    resample.SetOutputSpacing(out_spacing)
-    resample.SetSize(out_size)
-    resample.SetOutputDirection(itk_image.GetDirection())
-    resample.SetOutputOrigin(itk_image.GetOrigin())
-    resample.SetTransform(sitk.Transform())
-    resample.SetDefaultPixelValue(itk_image.GetPixelIDValue())
-
-    if is_label:
-        resample.SetInterpolator(sitk.sitkNearestNeighbor)
-    else:
-        resample.SetInterpolator(sitk.sitkBSpline)
-
-    return resample.Execute(itk_image)
-
-# def histogram_normalization():
-#     return Exception("Not Implemented")
-
-def N4_bias_correction(img):
-    """
-    Args:
-        img: A SimpleITK image
-    Returns:
-        A bias corrected SimpleITK image
-    """
-    # https://github.com/poornasandur/BRATS_N4Bias/blob/master/test3.py
-    img=sitk.Cast(img,sitk.sitkFloat32)
-    img_mask=sitk.Cast(sitk.BinaryNot(sitk.BinaryThreshold(img, 0, 0)), sitk.sitkUInt8)
-    return sitk.N4BiasFieldCorrection(img, img_mask)
 
 def get_multi_class_labels(data, n_labels, labels=None, remove_background = False):
     """
@@ -244,12 +189,10 @@ def sanity_checks(patch_x, patch_y):
 
 def add_channel(image):
     """
-    Adds a single channel dimension to a 3D or 2D monomodal SimpleITK image or numpy array.
+    Adds a single channel dimension to a 3D or 2D numpy array.
     Args:
-        image: a monomodal SimpleITK image or numpy array without a channel dimension
+        image: a numpy array without a channel dimension
     Returns:
         A single channel numpy array (channels_last)
     """
-    if isinstance(image, sitk.Image):
-        image = GetArrayFromImage(image)
     return np.expand_dims(image.squeeze(), -1).astype(np.float32)
