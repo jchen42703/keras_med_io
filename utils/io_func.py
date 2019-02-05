@@ -157,11 +157,11 @@ def get_multi_class_labels(data, n_labels, labels=None, remove_background = Fals
         y = y[-without_background:] # removing the background
     return y
 
-def load_data(data_path, format = None):
+def load_data(data_path, file_format = None):
     """
     Args:
         data_path: path to the image file
-        format: str representing the format as shown below:
+        file_format: str representing the format as shown below:
             * 'npy': data is a .npy file
             * 'nii': data is a .nii.gz or .nii file
             * Defaults to None; if it is None, it auto checks for the format
@@ -170,15 +170,15 @@ def load_data(data_path, format = None):
     """
     assert os.path.isfile(data_path), "Please make sure that `data_path` is to a file!"
     # checking for file formats
-    if format is None:
-        if '.nii.gz' or '.nii' in data_path:
-            format = 'nii'
-        elif '.npy' in data_path:
-            format = 'npy'
+    if file_format is None:
+        if '.nii.gz' in data_path[-6:] or '.nii' in data_path[-4:]:
+            file_format = 'nii'
+        elif '.npy' in data_path[-4:]:
+            file_format = 'npy'
     # loading the data
-    if format == 'npy':
+    if file_format == 'npy':
         return np.load(data_path).astype(np.float32)
-    elif format == 'nii':
+    elif file_format == 'nii':
         return nib.load(data_path).get_fdata().astype(np.float32)
     else:
         raise Exception("Please choose a compatible file format: `npy` or `nii`.")
