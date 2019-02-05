@@ -67,8 +67,8 @@ class NormalizationGenerator(BaseGenerator):
         imgs_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = load_data(os.path.join(self.data_dirs[0] + id))
-            y_train = load_data(os.path.join(self.data_dirs[1] + id))
+            x_train = load_data(os.path.join(self.data_dirs[0], id))
+            y_train = load_data(os.path.join(self.data_dirs[1], id))
             # (...., n_channels)
             if not x_train.shape[-1] == self.n_channels:
                 # Adds channel in case there is no channel dimension
@@ -172,8 +172,8 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         patches_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = load_data(os.path.join(self.data_dirs[0] + id))
-            y_train = load_data(os.path.join(self.data_dirs[1] + id))
+            x_train = load_data(os.path.join(self.data_dirs[0], id))
+            y_train = load_data(os.path.join(self.data_dirs[1], id))
             # (...., n_channels)
             if self.ndim == 2:
                 # extracting a 2D Slice to be resampled
@@ -209,7 +209,7 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         """
         pos_slice_dict = {}
         for id in self.list_IDs:
-            label = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().squeeze()
+            label = nib.load(os.path.join(self.data_dirs[1], id)).get_fdata().squeeze()
             pos_slice_dict[id] = self.get_positive_idx(label, dstack = False)[0] #producing slice indices for each id
         return pos_slice_dict
 
@@ -308,8 +308,8 @@ class NormalizedPatchGenerator(PosRandomPatchExtractor, NormalizationGenerator):
         patches_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = load_data(os.path.join(self.data_dirs[0] + id))
-            y_train = load_data(os.path.join(self.data_dirs[1] + id))
+            x_train = load_data(os.path.join(self.data_dirs[0], id))
+            y_train = load_data(os.path.join(self.data_dirs[1], id))
             # (...., n_channels)
             if self.ndim == 2:
                 # extracting a 2D Slice to be resampled
@@ -346,6 +346,6 @@ class NormalizedPatchGenerator(PosRandomPatchExtractor, NormalizationGenerator):
         """
         pos_slice_dict = {}
         for id in self.list_IDs:
-            label = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().squeeze()
+            label = nib.load(os.path.join(self.data_dirs[1], id)).get_fdata().squeeze()
             pos_slice_dict[id] = self.get_positive_idx(label, dstack = False)[0] #producing slice indices for each id
         return pos_slice_dict
