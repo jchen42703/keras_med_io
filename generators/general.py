@@ -1,7 +1,8 @@
 import numpy as np
 from keras_med_io.utils.gen_utils import BaseGenerator
 from keras_med_io.utils.patch_utils import PosRandomPatchExtractor
-from keras_med_io.utils.io_func import normalization, sanity_checks, add_channel, get_multi_class_labels, transforms
+from keras_med_io.utils.io_func import normalization, sanity_checks, add_channel, \
+                                       get_multi_class_labels, transforms, load_data
 import nibabel as nib
 from random import randint
 import os
@@ -66,8 +67,8 @@ class NormalizationGenerator(BaseGenerator):
         imgs_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = nib.load(os.path.join(self.data_dirs[0] + id)).get_fdata().astype(np.float32)
-            y_train = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().astype(np.float32)
+            x_train = load_data(os.path.join(self.data_dirs[0] + id))
+            y_train = load_data(os.path.join(self.data_dirs[1] + id))
             # (...., n_channels)
             if not x_train.shape[-1] == self.n_channels:
                 # Adds channel in case there is no channel dimension
@@ -171,8 +172,8 @@ class PosRandomPatchGenerator(PosRandomPatchExtractor, BaseGenerator):
         patches_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = nib.load(os.path.join(self.data_dirs[0] + id)).get_fdata().astype(np.float32)
-            y_train = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().astype(np.float32)
+            x_train = load_data(os.path.join(self.data_dirs[0] + id))
+            y_train = load_data(os.path.join(self.data_dirs[1] + id))
             # (...., n_channels)
             if self.ndim == 2:
                 # extracting a 2D Slice to be resampled
@@ -307,8 +308,8 @@ class NormalizedPatchGenerator(PosRandomPatchExtractor, NormalizationGenerator):
         patches_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = nib.load(os.path.join(self.data_dirs[0] + id)).get_fdata().astype(np.float32)
-            y_train = nib.load(os.path.join(self.data_dirs[1] + id)).get_fdata().astype(np.float32)
+            x_train = load_data(os.path.join(self.data_dirs[0] + id))
+            y_train = load_data(os.path.join(self.data_dirs[1] + id))
             # (...., n_channels)
             if self.ndim == 2:
                 # extracting a 2D Slice to be resampled
