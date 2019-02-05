@@ -3,6 +3,7 @@
 import os
 from glob import glob
 import numpy as np
+import nibabel as nib
 
 from keras_med_io.batchgenerators.augmentations.spatial_transformations \
     import augment_spatial_nocrop
@@ -155,6 +156,32 @@ def get_multi_class_labels(data, n_labels, labels=None, remove_background = Fals
         without_background = n_labels - 1
         y = y[-without_background:] # removing the background
     return y
+
+def load_data(data_path, format = None):
+    """
+    Args:
+        data_path: path to the image file
+        format: str representing the format as shown below:
+            * 'npy': data is a .npy file
+            * 'nii': data is a .nii.gz or .nii file
+            * Defaults to None; if it is None, it auto checks for the format
+    Returns:
+        A loaded numpy array (into memory) with type np.float32
+    """
+    assert os.path.isfile(data_path), "Please make sure that `data_path` is to a file!"
+    # checking for file formats
+    if format is None:
+        if '.nii.gz' or '.nii' in data_path:
+            format = 'nii'
+        elif '.npy' in data_path:
+            format = 'npy'
+    # loading the data
+    if format == 'npy':
+        return np.load(data_path).astype(np.float32)
+    elif format == 'nii':
+        return nib.load(data_path).get_fdata().astype(np.float32)
+    else:
+        raise Exception("Please choose a compatible file format: `npy` or `nii`.")
 
 def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
     """
