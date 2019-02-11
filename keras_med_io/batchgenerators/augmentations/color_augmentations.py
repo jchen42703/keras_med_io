@@ -19,7 +19,6 @@ import random
 
 from keras_med_io.batchgenerators.augmentations.utils import general_cc_var_num_channels, illumination_jitter
 
-
 def augment_contrast(data, contrast_range=(0.75, 1.25), preserve_range=True, per_channel=True):
     for sample in range(data.shape[0]):
         if not per_channel:
