@@ -5,6 +5,27 @@ from glob import glob
 import numpy as np
 import nibabel as nib
 
+def reshape(orig_img, append_value=-1024, new_shape=(512, 512, 512)):
+    """
+    Reshapes a numpy array with the specified values where the new shape must have >= to the number of
+    voxels in the original image. If # of voxels in `new_shape` is > than the # of voxels in the original image,
+    then the extra will be filled in by `append_value`.
+    Args:
+        orig_img:
+        append_value: filler value
+        new_shape: must have >= to the number of voxels in the original image.
+    """
+    reshaped_image = np.zeros(new_shape)
+    reshaped_image[...] = append_value
+    x_offset = 0
+    y_offset = 0  # (new_shape[1] - orig_img.shape[1]) // 2
+    z_offset = 0  # (new_shape[2] - orig_img.shape[2]) // 2
+
+    reshaped_image[x_offset:orig_img.shape[0]+x_offset, y_offset:orig_img.shape[1]+y_offset, z_offset:orig_img.shape[2]+z_offset] = orig_img
+    # insert temp_img.min() as background value
+
+    return reshaped_image
+    
 # helper functions
 def normalization(arr, normalize_mode, norm_range = [0,1]):
     """
