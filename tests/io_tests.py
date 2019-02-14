@@ -34,30 +34,6 @@ class IOTest(unittest.TestCase):
         self.label_image_3D = np.ones(self.image_shape_3D)
         self.overlap = 0
 
-    def test_transforms_2D(self):
-        """
-        Transforms the data with random elastic deformations, random rotations/flips, and gaussian noise. [2D]
-        """
-        ndim = 2
-        image = np.expand_dims(self.train_image_2D, 0)
-        label = np.expand_dims(self.label_image_2D, 0)
-        image_transform, label_transform = transforms(image, label, ndim = ndim,
-                                                      fraction_ = 0.2, variance_ = (0, 0.1))
-        self.assertEqual(image_transform.shape, image.shape)
-        self.assertEqual(label_transform.shape, label.shape)
-
-    def test_transforms_3D(self):
-        """
-        Transforms the data with random elastic deformations, random rotations/flips, and gaussian noise. [3D]
-        """
-        ndim = 3
-        image = np.expand_dims(self.train_image_3D, 0)
-        label = np.expand_dims(self.label_image_3D, 0)
-        image_transform, label_transform = transforms(image, label, ndim = ndim,
-                                                      fraction_ = 0.2, variance_ = (0, 0.1))
-        self.assertEqual(image_transform.shape, image.shape)
-        self.assertEqual(label_transform.shape, label.shape)
-
     def test_normalize(self):
         """
         Tests the pixel value range for normalize.
