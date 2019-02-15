@@ -25,7 +25,7 @@ def reshape(orig_img, append_value=-1024, new_shape=(512, 512, 512)):
     # insert temp_img.min() as background value
 
     return reshaped_image
-    
+
 # helper functions
 def normalization(arr, normalize_mode, norm_range = [0,1]):
     """
@@ -128,7 +128,7 @@ def load_data(data_path, file_format = None):
     assert os.path.isfile(data_path), "Please make sure that `data_path` is to a file!"
     # checking for file formats
     if file_format is None:
-        if '.nii.gz' in data_path[-6:] or '.nii' in data_path[-4:]:
+        if '.nii.gz' in data_path[-7:] or '.nii' in data_path[-4:]:
             file_format = 'nii'
         elif '.npy' in data_path[-4:]:
             file_format = 'npy'
