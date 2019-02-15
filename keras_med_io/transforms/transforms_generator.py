@@ -26,13 +26,15 @@ class BaseTransformGenerator(BaseGenerator):
         shuffle: boolean
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                transform = None, max_patient_shape = (144, 255, 319), shuffle = True):
+                transform = None, max_patient_shape = None, shuffle = True):
 
         BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, shuffle = shuffle)
         self.ndim = ndim
         self.transform = transform
         self.max_patient_shape = max_patient_shape
+        if max_patient_shape is None:
+            self.max_patient_shape = self._compute_max_patient_shape()
         self.indexes = np.arange(len(self.list_IDs))
 
     def __getitem__(self, idx):
@@ -118,3 +120,31 @@ class BaseTransformGenerator(BaseGenerator):
         else:
             raise Exception("Please choose a compatible data format: 'channels_last' or 'channels_first'")
         return np.transpose(arr, axes_list)
+
+    def _compute_max_patient_shape(self):
+        """
+        Computes various shape statistics (min, max, and mean) and ONLY returns the max_patient_shape
+        Args:
+            ...
+        Returns:
+            max_patient_shape: tuple representing the maximum patient shape
+        """
+        # iterating through entire dataset
+        shape_list = []
+        for id in self.list_IDs:
+            x_train = load_data(os.path.join(self.data_dirs[0], id))
+            shape_list.append(np.asarray(x_train.shape))
+        shapes = np.stack(shape_list)
+        # computing stats
+        max_patient_shape = tuple(np.max(shapes, axis = 0))
+        mean_patient_shape = tuple(np.mean(shapes, axis = 0))
+        min_patient_shape = tuple(np.min(shapes, axis = 0))
+        print("Max Patient Shape: ", max_patient_shape, "\nMean Patient Shape: ", mean_patient_shape,
+        "\nMin Patient Shape: ", min_patient_shape)
+        # Running a quick check on a possible fail case
+        try:
+            assert len(max_patient_shape) == self.ndim
+        except AssertionError:
+            print("Excluding the channels dimension (axis = -1) for the maximum patient shape.")
+            max_patient_shape = max_patient_shape[:-1]
+        return max_patient_shape
