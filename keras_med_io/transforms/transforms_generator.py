@@ -10,9 +10,10 @@ import os
 class BaseTransformGenerator(BaseGenerator):
     """
     Loads data and applies data augmentation with `batchgenerators.transforms`.
-    * Supports both channels_last and channels_first
+    * Supports channels_last
     * Loads data WITH nibabel instead of SimpleITK
         * .nii files should not have the batch_size dimension
+    * Also computes various dataset metadata statistics (i.e. shape stats and min intensity)
 
     Attributes:
         list_IDs: list of filenames
@@ -35,7 +36,13 @@ class BaseTransformGenerator(BaseGenerator):
         self.max_patient_shape = max_patient_shape
         if max_patient_shape is None:
             self.max_patient_shape = self._compute_max_patient_shape()
-        self.indexes = np.arange(len(self.list_IDs))
+        n_samples = len(self.list_IDs)
+        self.indexes = np.arange(n_samples)
+
+        # Handles cases where the dataset is small and the batch size is high
+        if batch_size > n_samples:
+            while batch_size > self.indexes.size:
+                self.indexes = np.repeat(self.indexes, 2)
 
     def __getitem__(self, idx):
         """
@@ -129,6 +136,7 @@ class BaseTransformGenerator(BaseGenerator):
         Returns:
             max_patient_shape: tuple representing the maximum patient shape
         """
+        print("Computing shape statistics...")
         # iterating through entire dataset
         shape_list = []
         for id in self.list_IDs:
@@ -148,3 +156,4 @@ class BaseTransformGenerator(BaseGenerator):
             print("Excluding the channels dimension (axis = -1) for the maximum patient shape.")
             max_patient_shape = max_patient_shape[:-1]
         return max_patient_shape
+        
