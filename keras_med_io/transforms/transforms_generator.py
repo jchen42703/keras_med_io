@@ -13,7 +13,6 @@ class BaseTransformGenerator(BaseGenerator):
     * Supports channels_last
     * Loads data WITH nibabel instead of SimpleITK
         * .nii files should not have the batch_size dimension
-    * Also computes various dataset metadata statistics (i.e. shape stats and min intensity)
 
     Attributes:
         list_IDs: list of filenames
@@ -156,4 +155,3 @@ class BaseTransformGenerator(BaseGenerator):
             print("Excluding the channels dimension (axis = -1) for the maximum patient shape.")
             max_patient_shape = max_patient_shape[:-1]
         return max_patient_shape
-        
