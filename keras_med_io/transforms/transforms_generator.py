@@ -27,7 +27,7 @@ class BaseTransformGenerator(BaseGenerator):
         shuffle: boolean
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                transform = None, max_patient_shape = None, shuffle = True):
+                transform = None, max_patient_shape = None, n_workers = 1, shuffle = True):
 
         BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, shuffle = shuffle)
@@ -41,7 +41,8 @@ class BaseTransformGenerator(BaseGenerator):
 
         # Handles cases where the dataset is small and the batch size is high
         if batch_size > n_samples:
-            while batch_size > self.indexes.size:
+            print("Adjusting the indexes since the batch size is greater than the number of images.")
+            while batch_size * (n_workers + 1) > self.indexes.size:
                 self.indexes = np.repeat(self.indexes, 2)
 
     def __getitem__(self, idx):
@@ -215,11 +216,12 @@ class Transformed2DGenerator(BaseTransformGenerator):
         shuffle: boolean
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                n_pos, transform = None, max_patient_shape = None, shuffle = True):
+                n_pos, transform = None, max_patient_shape = None, n_workers = 1, shuffle = True):
 
         BaseTransformGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, ndim = ndim,
-                               transform = transform, max_patient_shape = max_patient_shape, shuffle = shuffle)
+                               transform = transform, max_patient_shape = max_patient_shape,
+                               n_workers = n_workers, shuffle = shuffle)
         self.n_pos = n_pos
         assert n_pos > 0, "Please make sure that `n_pos` > 0."
         if len(self.max_patient_shape) == 2:
