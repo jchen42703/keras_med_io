@@ -45,6 +45,9 @@ class BaseTransformGenerator(BaseGenerator):
             while batch_size * (n_workers + 1) > self.indexes.size:
                 self.indexes = np.repeat(self.indexes, 2)
 
+    def __len__(self):
+        return int(np.ceil(len(self.indexes) / float(self.batch_size)))
+
     def __getitem__(self, idx):
         """
         Defines the fetching and on-the-fly preprocessing of data.
