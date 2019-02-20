@@ -40,10 +40,18 @@ class BaseTransformGenerator(BaseGenerator):
         self.indexes = np.arange(n_samples)
 
         # Handles cases where the dataset is small and the batch size is high
-        if batch_size > n_samples:
-            print("Adjusting the indexes since the batch size is greater than the number of images.")
+        if batch_size * (n_workers + 1) > n_samples:
+            print("Adjusting the indexes since the batch size [adjusted with the n_workers] is greater than the number of images.")
             while batch_size * (n_workers + 1) > self.indexes.size:
                 self.indexes = np.repeat(self.indexes, 2)
+            # ensuring that batch_size is divisible into the number of indices
+            if not len(self.indexes) % batch_size == 0:
+                try:
+                  print("Making sure that the batch_size is divisible into the number of indices")
+                  self.indexes = self.indexes[:-(len(self.indexes) % batch_size)]
+                  assert batch_size * (n_workers + 1) <= self.indexes.size
+                except AssertionError:
+                  print("WARNING. Your batch size is not divisible into the number of indexes: ", str(len(self.indexes)))
 
     def __len__(self):
         return int(np.ceil(len(self.indexes) / float(self.batch_size)))
