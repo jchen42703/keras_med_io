@@ -303,3 +303,50 @@ class Transformed2DGenerator(BaseTransformGenerator):
 
         input_data, seg_masks = np.stack(images_x), np.stack(images_y)
         return (input_data, seg_masks)
+
+    def load_data(self, batchwise = True):
+        """
+        Loads all data from given files and directory in two numpy arrays representing the inputs and labels
+        (Mainly used for evaluation)
+        * Note: Basically the same as self.data_gen except there is no slice extraction, just loading padded full images
+        Args:
+            batchwise: boolean on whether to return batched outputs or vertically stacked outputs depending on how you want to evaluate your inputs
+                * Note: batchwise evaluation would be done if you calculate the metrics for each batch and get the mean (2D/3D)
+                        samplewise evaluation would be done if you calculate the metrics for each individual 2D slice (2D only)
+        Returns:
+            inputs: with shape (n_batches, x, y, z, n_channels) or (n_samples, x, y, n_channels)
+            labels: same shape as inputs
+        """
+        images_x = []
+        images_y = []
+        for id in self.list_IDs:
+            # loads data as a numpy arr and then changes the type to float32
+            x_train = load_data(os.path.join(self.data_dirs[0], id))
+            y_train = load_data(os.path.join(self.data_dirs[1], id))
+            if not x_train.shape[-1] == self.n_channels:
+                # Adds channel in case there is no channel dimension
+                x_train = add_channel(x_train)
+            if not y_train.shape[-1] == self.n_channels:
+                # Adds channel in case there is no channel dimension
+                y_train = add_channel(y_train)
+
+            if self.n_classes > 1: # no point to run this when binary (foreground/background)
+                y_train = get_multi_class_labels(y_train, n_labels = self.n_classes, remove_background = True)
+
+            # Padding to the max patient shape (so the arrays can be stacked)
+            if self.dynamic_padding_z: # for when you don't want to pad the slice dimension (bc that usually changes in images)
+                pad_shape = (x_train.shape[0], ) + self.max_patient_shape
+            elif not self.dynamic_padding_z:
+                pad_shape = self.max_patient_shape
+            x_train = reshape(x_train, x_train.min(), pad_shape + (self.n_channels, ))
+            y_train = reshape(y_train, 0, pad_shape + (self.n_classes, ))
+            assert sanity_checks(x_train, y_train)
+
+            images_x.append(x_train), images_y.append(y_train)
+
+        if batchwise:
+            input_data, seg_masks = np.stack(images_x), np.stack(images_y)
+        elif not batchwise:
+            input_data, seg_masks = np.vstack(images_x), np.vstack(images_y)
+
+        return (input_data, seg_masks)
