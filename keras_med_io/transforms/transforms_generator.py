@@ -49,7 +49,7 @@ class BaseTransformGenerator(BaseGenerator):
                 try:
                   print("Making sure that the batch_size is divisible into the number of indices")
                   self.indexes = self.indexes[:-(len(self.indexes) % batch_size)]
-                  assert batch_size * (n_workers + 1) <= self.indexes.size
+                  assert batch_size * (n_workers + 1) == self.indexes.size
                 except AssertionError:
                   print("WARNING. Your batch size is not divisible into the number of indexes: ", str(len(self.indexes)))
 
@@ -234,28 +234,36 @@ class Transformed2DGenerator(BaseTransformGenerator):
                                transform = transform, max_patient_shape = max_patient_shape,
                                n_workers = n_workers, shuffle = shuffle)
         self.n_pos = n_pos
-        assert n_pos > 0, "Please make sure that `n_pos` > 0."
+        if n_pos == 0:
+            print("WARNING! Your data is going to be randomly sliced.")
+            self.random_only = True
         if len(self.max_patient_shape) == 2:
             self.dynamic_padding_z = True # no need to pad the slice dimension
 
     def __getitem__(self, idx):
         """
         Defines the fetching and on-the-fly preprocessing of data.
-        Returns a batch of data (x,y)
+        Args:
+            idx: the id assigned to each worker
+        Returns:
+            (X,Y): a batch of transformed data/labels based on the n_pos attribute.
         """
         # file names
         indexes = self.indexes[idx*self.batch_size:(idx+1)*self.batch_size]
         # Fetches batched IDs for a thread
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
-        # generating data for both positive and randomly sampled data
-        X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos], pos_sample = True)
-        X_rand, Y_rand = self.data_gen(list_IDs_temp[self.n_pos:], pos_sample = False)
-        # concatenating all the corresponding data
-        X, Y = np.concatenate([X_pos, X_rand], axis = 0), np.concatenate([Y_pos, Y_rand], axis = 0)
-        # shuffling the order of the positive/random patches
-        out_rand_indices = np.arange(0, X.shape[0])
-        np.random.shuffle(out_rand_indices)
-        X, Y = X[out_rand_indices], Y[out_rand_indices]
+        if not self.random_only:
+            # generating data for both positive and randomly sampled data
+            X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos], pos_sample = True)
+            X_rand, Y_rand = self.data_gen(list_IDs_temp[self.n_pos:], pos_sample = False)
+            # concatenating all the corresponding data
+            X, Y = np.concatenate([X_pos, X_rand], axis = 0), np.concatenate([Y_pos, Y_rand], axis = 0)
+            # shuffling the order of the positive/random patches
+            out_rand_indices = np.arange(0, X.shape[0])
+            np.random.shuffle(out_rand_indices)
+            X, Y = X[out_rand_indices], Y[out_rand_indices]
+        elif self.random_only:
+            X, Y = self.data_gen(list_IDs_temp, pos_sample = False)
         if self.transform is not None:
             X, Y = self.apply_transform(X, Y)
         return (X, Y)
