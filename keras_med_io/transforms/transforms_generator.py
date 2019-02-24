@@ -38,23 +38,47 @@ class BaseTransformGenerator(BaseGenerator):
             self.max_patient_shape = self.compute_max_patient_shape()
         n_samples = len(self.list_IDs)
         self.indexes = np.arange(n_samples)
+        max_n_idx = batch_size * (n_workers + 2) # default for now
 
         # Handles cases where the dataset is small and the batch size is high
-        if batch_size * (n_workers + 1) > n_samples:
+        if max_n_idx > n_samples:
             print("Adjusting the indexes since the batch size [adjusted with the n_workers] is greater than the number of images.")
-            while batch_size * (n_workers + 1) > self.indexes.size:
-                self.indexes = np.repeat(self.indexes, 2)
-            # ensuring that batch_size is divisible into the number of indices
-            if not len(self.indexes) % batch_size == 0:
-                try:
-                  print("Making sure that the batch_size is divisible into the number of indices")
-                  self.indexes = self.indexes[:-(len(self.indexes) % batch_size)]
-                  assert batch_size * (n_workers + 1) == self.indexes.size
-                except AssertionError:
-                  print("WARNING. Your batch size is not divisible into the number of indexes: ", str(len(self.indexes)))
+            self.adjust_indexes(max_n_idx)
+            print("Done!")
+
+    def adjust_indexes(self, max_n_idx):
+        """
+        Adjusts the indexes when the batch size [adjusted with the n_workers] is greater than the number of images.
+        This is primarily used to make sure that there will always be enough indices for the generator to use during multiprocessing.
+        Args:
+            max_n_idx: The current maximum size of self.indexes, which is based on the current max `idx` from `__getitem__`, so it
+            should be `(idx + 1) * batch_size` or some variant of that.
+        Returns:
+            Nothing
+        """
+        if max_n_idx < self.indexes.size:
+            print("WARNING! The max_n_idx should be larger than the current number of indexes or else there's no point in using this \n\
+            function. It has been automatically adjusted for you.")
+            max_n_idx = self.batch_size * max_n_idx
+        # expanding the indexes until it passes the threshold: max_n_idx (extra will be removed later)
+        while max_n_idx > self.indexes.size:
+            self.indexes = np.repeat(self.indexes, 2)
+
+        # ensuring that batch_size is divisible into the number of indices
+        if not len(self.indexes) % self.batch_size == 0:
+          # Making sure that the batch_size is divisible into the number of indices
+          self.indexes = self.indexes[:-(len(self.indexes) % (max_n_idx))]
+          assert max_n_idx == self.indexes.size
 
     def __len__(self):
         return int(np.ceil(len(self.indexes) / float(self.batch_size)))
+
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        # self.img_idx = np.arange(len(self.x))
+        # self.indexes = np.arange(len(self.indexes))
+        if self.shuffle == True:
+            np.random.shuffle(self.indexes)
 
     def __getitem__(self, idx):
         """
@@ -237,6 +261,8 @@ class Transformed2DGenerator(BaseTransformGenerator):
         if n_pos == 0:
             print("WARNING! Your data is going to be randomly sliced.")
             self.random_only = True
+        else:
+            self.random_only = False
         if len(self.max_patient_shape) == 2:
             self.dynamic_padding_z = True # no need to pad the slice dimension
 
@@ -249,9 +275,15 @@ class Transformed2DGenerator(BaseTransformGenerator):
             (X,Y): a batch of transformed data/labels based on the n_pos attribute.
         """
         # file names
+        max_n_idx = (idx + 1) * self.batch_size
+        if max_n_idx > self.indexes.size:
+            print("Adjusting for idx: ", idx)
+            self.adjust_indexes(max_n_idx)
+
         indexes = self.indexes[idx*self.batch_size:(idx+1)*self.batch_size]
         # Fetches batched IDs for a thread
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
+        # balanced sampling
         if not self.random_only:
             # generating data for both positive and randomly sampled data
             X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos], pos_sample = True)
@@ -262,10 +294,14 @@ class Transformed2DGenerator(BaseTransformGenerator):
             out_rand_indices = np.arange(0, X.shape[0])
             np.random.shuffle(out_rand_indices)
             X, Y = X[out_rand_indices], Y[out_rand_indices]
+        # random sampling
         elif self.random_only:
             X, Y = self.data_gen(list_IDs_temp, pos_sample = False)
+        # data augmentation
         if self.transform is not None:
             X, Y = self.apply_transform(X, Y)
+        # print("Getting item of size: ", indexes.size, "out of ", self.indexes.size, "with idx: ", idx, "\nX shape: ", X.shape)
+        assert X.shape[0] == self.batch_size, "The outputted batch doesn't match the batch size."
         return (X, Y)
 
     def data_gen(self, list_IDs_temp, pos_sample):
