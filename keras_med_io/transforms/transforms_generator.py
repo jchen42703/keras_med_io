@@ -264,6 +264,9 @@ class Transformed2DGenerator(BaseTransformGenerator):
         elif n_pos == batch_size:
             print("WARNING! Your entire batch is going to be positively sampled.")
             self.pos_only = True
+        else:
+            self.bal_only = True
+
         if len(self.max_patient_shape) == 2:
             self.dynamic_padding_z = True # no need to pad the slice dimension
 
@@ -285,7 +288,7 @@ class Transformed2DGenerator(BaseTransformGenerator):
         # Fetches batched IDs for a thread
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
         # balanced sampling
-        if not self.random_only and not self.pos_only:
+        if self.bal_only:
             # generating data for both positive and randomly sampled data
             X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos], pos_sample = True)
             X_rand, Y_rand = self.data_gen(list_IDs_temp[self.n_pos:], pos_sample = False)
