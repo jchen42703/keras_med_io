@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='keras_med_io',
-      version='0.01.1',
+      version='0.01.2',
       description='Easy IO for medical image segmentation',
       url='https://github.com/jchen42703/keras_med_io',
       author='Joseph Chen',
@@ -16,7 +16,7 @@ setup(name='keras_med_io',
             "keras",
             "tensorflow",
             "nibabel",
-            #"batchgenerators"
+            "batchgenerators"
       ],
       classifiers=[
           'Development Status :: 3 - Alpha',
