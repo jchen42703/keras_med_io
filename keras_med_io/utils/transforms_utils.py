@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from keras_med_io.utils.io_func import load_data
+from keras_med_io.utils.misc_utils import load_data
 
 def compute_pad_value(input_dir, list_IDs):
     """
