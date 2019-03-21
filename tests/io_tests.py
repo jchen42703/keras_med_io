@@ -1,4 +1,4 @@
-from keras_med_io.utils.io_func import *
+from keras_med_io.utils.intensity_io import *
 import unittest
 import os
 
