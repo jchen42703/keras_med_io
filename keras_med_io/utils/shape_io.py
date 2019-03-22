@@ -35,6 +35,21 @@ def extract_nonint_region(image, mask = None, outside_value=0, coords = False):
         segmentation mask (when mask is not None)
         a nested list of the mins and and maxes of each axis (when coords = True)
     """
+    # Copyright 2017 Division of Medical Image Computing, German Cancer Research Center (DKFZ)
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    # ===================================================================================================
+    # Changes: Added the ability to return the cropping coordinates
     pos_idx = np.where(image != outside_value)
     # fetching all of the min/maxes for each axes
     pos_x, pos_y, pos_z = pos_idx[1], pos_idx[2], pos_idx[0]
@@ -59,14 +74,28 @@ def extract_nonint_region(image, mask = None, outside_value=0, coords = False):
 
 def resample_array(src_imgs, src_spacing, target_spacing, is_label = False):
     """
-    From: https://github.com/MIC-DKFZ/medicaldetectiontoolkit/
     Resamples a numpy array.
-    ** the spacings must be the same dimension as the input numpy array
     Args:
         src_imgs: numpy array
-        srs_spacing:
-        target_spacing:
+        srs_spacing: list of the voxel spacing (must be the same dimension as the input numpy array)
+        target_spacing: list of the target voxel spacings (must be the same dimension as the input numpy array)
     """
+    # Copyright 2018 Division of Medical Image Computing, German Cancer Research Center (DKFZ).
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    # ==============================================================================
+    # CHanges: Added the ability to resample groundtruth masks (using nearest neighbor)
+
     # Calcuating the target shape based on the target spacing
     src_spacing = np.round(src_spacing, decimals = 3)
     target_shape = [int(src_imgs.shape[ix] * src_spacing[ix] / target_spacing[ix]) \
