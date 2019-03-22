@@ -5,7 +5,7 @@ from keras_med_io.utils.misc_utils import load_data
 import nibabel as nib
 
 class BaseGenerator(keras.utils.Sequence):
-    '''
+    """
     Basic framework for generating thread-safe data in keras. (no preprocessing and channels_last)
     Based on https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
 
@@ -15,7 +15,8 @@ class BaseGenerator(keras.utils.Sequence):
       batch_size: int of desired number images per epoch
       n_channels: <-
       n_classes: <-
-    '''
+      shuffle: boolean on whether or not to shuffle the dataset
+    """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, shuffle = True):
         # lists of paths to images
         self.list_IDs = list_IDs
@@ -61,10 +62,6 @@ class BaseGenerator(keras.utils.Sequence):
 class BaseTransformGenerator(BaseGenerator):
     """
     Loads data and applies data augmentation with `batchgenerators.transforms`.
-    * Supports channels_last
-    * Loads data WITH nibabel instead of SimpleITK
-        * .nii files should not have the batch_size dimension
-
     Attributes:
         list_IDs: list of filenames
         data_dirs: list of paths to both the input dir and labels dir
@@ -74,7 +71,7 @@ class BaseTransformGenerator(BaseGenerator):
         ndim: number of dimensions of the input (excluding the batch_size and n_channels axes)
         transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
         max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. (x,y, (z,))
-        shuffle: boolean
+        shuffle: boolean on whether to shuffle the dataset between epochs
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
                 transform = None, max_patient_shape = None, n_workers = 1, shuffle = True):
@@ -124,7 +121,9 @@ class BaseTransformGenerator(BaseGenerator):
         return int(np.ceil(len(self.indexes) / float(self.batch_size)))
 
     def on_epoch_end(self):
-        'Updates indexes after each epoch'
+        """
+        Updates indexes after each epoch
+        """
         # self.img_idx = np.arange(len(self.x))
         # self.indexes = np.arange(len(self.indexes))
         if self.shuffle == True:
@@ -170,6 +169,8 @@ class BaseTransformGenerator(BaseGenerator):
         Args:
             arr: numpy array of shape (batch_size, x, y(,z), n_channels) (could be 4D or 5D)
             convert_to: desired data format to convert `arr` to; either "channels_last" or "channels_first"
+        Returns:
+            the transposed numpy array
         """
         # converting to channels_first
         if convert_to == "channels_first":
