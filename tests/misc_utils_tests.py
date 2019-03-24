@@ -1,7 +1,8 @@
-from keras_med_io.utils.misc_utils import load_data, get_list_IDs, add_channel#,get_multi_class_labels
+from keras_med_io.utils.misc_utils import load_data, get_list_IDs, add_channel, get_multi_class_labels, KFold
 import unittest
 import os
 import nibabel as nib
+import numpy as np
 
 class Misc_Utils_Test(unittest.TestCase):
     """
@@ -84,7 +85,9 @@ class Misc_Utils_Test(unittest.TestCase):
 
     def test_get_list_IDs(self):
         """
-        Tests that get_list_IDs gets unique folds and that they are divided up correctly
+        Tests that get_list_IDs
+        1. produces unique files in the folds
+        2. correctly divides the folds (correct length)
         Note: We're using the path to the .npy files instead of the .nii.gz because the original directory
         had some unnecessary files that start with "._".
         """
@@ -98,6 +101,59 @@ class Misc_Utils_Test(unittest.TestCase):
         combined = id_dict['train'] + id_dict['val'] + id_dict['test']
         self.assertEqual(n_files, len(combined))
         self.assertEqual(n_files, np.unique(combined).size)
+
+    def test_KFold_nodict(self):
+        """
+        Tests that the KFold function: (return_dict = False)
+        1. produces unique folds
+        2. correctly divided folds (the right length wrt the provided percentages)
+        3. randomly outputs folds. (Will produce different folds each time)
+        """
+        n_files = len(os.listdir(self.train_npy_path))
+        # returns lists of files
+        train, val, test = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = False)
+        # 1. testing that the folds have unique files
+        combined = train + val + test
+        self.assertEqual(n_files, len(combined))
+        self.assertEqual(n_files, np.unique(combined).size)
+         # 2. testing fold lengths
+        self.assertEqual(n_files * 0.6, len(train))
+        self.assertEqual(n_files * 0.2, len(val))
+        self.assertEqual(n_files * 0.2, len(test))
+        # 3. testing that the folds will be different each time (for 3 iterations)
+            # comparing newly generated to the original
+        for i in range(3):
+            train_new, val_new, test_new = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = False)
+            self.assertTrue(train_new != train)
+            self.assertTrue(val_new != val)
+            self.assertTrue(test_new != test)
+
+    def test_KFold_withdict(self):
+        """
+        Tests that the KFold function: (return_dict = True)
+        1. produces unique folds
+        2. correctly divided folds (the right length wrt the provided percentages)
+        3. randomly outputs folds. (Will produce different folds each time)
+        """
+        n_files = len(os.listdir(self.train_npy_path))
+        # returns lists of files
+        id_dict = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = True)
+        train, val, test = id_dict['train'], id_dict['val'], id_dict['test']
+        # 1. testing that the folds have unique files
+        combined = train + val + test
+        self.assertEqual(n_files, len(combined))
+        self.assertEqual(n_files, np.unique(combined).size)
+         # 2. testing fold lengths
+        self.assertEqual(n_files * 0.6, len(train))
+        self.assertEqual(n_files * 0.2, len(val))
+        self.assertEqual(n_files * 0.2, len(test))
+        # 3. testing that the folds will be different each time (for 3 iterations)
+            # comparing newly generated to the original
+        for i in range(3):
+            id_dict_new = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = True)
+            self.assertTrue(id_dict_new['train'] != train)
+            self.assertTrue(id_dict_new['val'] != val)
+            self.assertTrue(id_dict_new['test'] != test)
 
     def test_add_channel(self):
         """
