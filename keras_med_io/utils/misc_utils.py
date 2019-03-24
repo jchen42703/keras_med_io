@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import nibabel as nib
+import pandas as pd
 
 def get_multi_class_labels(data, n_labels, labels=None, remove_background = False):
     """
@@ -69,6 +70,28 @@ def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
     val_split = round(total * splits[1]) + train
     return {"train": id_list[:train], "val": id_list[train:val_split], "test": id_list[val_split:]
            }
+
+def KFold(data_dir, splits = [0.6, 0.2, 0.2], return_dict = False):
+    """
+    Divides list_IDs into train/val/test sets
+    Args:
+        data_dir: directory with files; assumes labels and training images have same names
+        splits: a list with 3 elements corresponding to the decimal train/val/test splits; [train, val, test]
+        return_dict: whether or not you want to return a dictionary with the filenames organized
+    Returns:
+        a dictionary of file ids for each set
+    """
+    assert np.sum(splits) == 1, "Please make sure that your splits add up to 1."
+    splits = [splits[0], splits[1] + splits[0]]
+    df = pd.Series(os.listdir(data_dir))
+    total = len(df)
+    train, validate, test = np.split(df.sample(frac=1), [int(splits[0]*len(df)), int(splits[1]*len(df))])
+    assert len(train) + len(validate) + len(test) == total, "There should be no file overlap."
+    if return_dict:
+      fname_dict = {'train': train, 'val': validate, 'test': test}
+      return fname_dict
+    else:
+      return train, validate, test
 
 def sanity_checks(patch_x, patch_y):
     """
