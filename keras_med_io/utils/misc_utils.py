@@ -90,7 +90,7 @@ def KFold(data_dir, splits = [0.6, 0.2, 0.2], return_dict = False):
     train, validate, test = np.split(df.sample(frac=1), [int(splits[0]*len(df)), int(splits[1]*len(df))])
     assert len(train) + len(validate) + len(test) == total, "There should be no file overlap."
     if return_dict:
-      fname_dict = {'train': train, 'val': validate, 'test': test}
+      fname_dict = {'train': list(train), 'val': list(validate), 'test': list(test)}
       return fname_dict
     else:
       return (list(train), list(validate), list(test))
