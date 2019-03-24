@@ -78,7 +78,10 @@ def KFold(data_dir, splits = [0.6, 0.2, 0.2], return_dict = False):
         splits: a list with 3 elements corresponding to the decimal train/val/test splits; [train, val, test]
         return_dict: whether or not you want to return a dictionary with the filenames organized
     Returns:
-        a dictionary of file ids for each set
+        if return_dict is True:
+            a dictionary of file ids for each set
+        elif return_dict is False:
+            tuple of lists of folds (train, validate, test)
     """
     assert np.sum(splits) == 1, "Please make sure that your splits add up to 1."
     splits = [splits[0], splits[1] + splits[0]]
@@ -90,7 +93,7 @@ def KFold(data_dir, splits = [0.6, 0.2, 0.2], return_dict = False):
       fname_dict = {'train': train, 'val': validate, 'test': test}
       return fname_dict
     else:
-      return train, validate, test
+      return (list(train), list(validate), list(test))
 
 def sanity_checks(patch_x, patch_y):
     """
