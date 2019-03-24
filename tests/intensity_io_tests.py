@@ -2,15 +2,13 @@ from keras_med_io.utils.intensity_io import *
 import unittest
 import os
 
-class IOTest(unittest.TestCase):
+class Intensity_IO_Test(unittest.TestCase):
     """
-    Testing IO.
-    Functions to test:
-        normalization
-    Can't really test:
-        get_multi_class_labels:
-        resample_img
-        get_list_IDs
+    Testing all the functions in `utils.intensity_io.py`:
+    * minmax_normalize
+    * normalize_clip
+    * whiten
+    * clip_upper_lower_percentile
     """
     def setUp(self):
         """
@@ -68,5 +66,19 @@ class IOTest(unittest.TestCase):
         flatten = self.train_image_2D.flatten()
         reshaped = flatten.reshape(self.image_shape_2D)
         self.assertTrue(np.array_equal(self.train_image_2D, reshaped))
+
+    def test_clip_upper_lower_percentile_no_mask(self):
+        """
+        Tests the `clip_upper_lower_percentile` function for when mask = None.
+        """
+        low = 0.2
+        high = 1.0 - low
+        cut_off_lower = np.percentile(self.train_image_2D, low)
+        cut_off_higher = np.percentile(self.train_image_2D, high)
+        self.train_image_2D = self.train_image_2D.astype(np.float64)
+        
+        clipped = clip_upper_lower_percentile(self.train_image_2D, percentile_lower = low, percentile_upper = high)
+        self.assertEqual(clipped.min(), cut_off_lower)
+        self.assertEqual(clipped.max(), cut_off_higher)
 
 unittest.main(argv=[''], verbosity=2, exit=False)
