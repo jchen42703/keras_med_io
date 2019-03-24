@@ -16,7 +16,8 @@ setup(name='keras_med_io',
             "keras",
             "tensorflow",
             "nibabel",
-            "batchgenerators"
+            "batchgenerators",
+            "pandas"
       ],
       classifiers=[
           'Development Status :: 3 - Alpha',
