@@ -13,7 +13,6 @@ def get_multi_class_labels(data, n_labels, labels=None, remove_background = Fals
     Returns:
         binary numpy array of shape (n_samples,..., n_labels) or (n_samples,..., n_labels-1)
     """
-
     new_shape = data.shape + (n_labels,)
     y = np.zeros(new_shape, np.int8)
     for label_index in range(n_labels):
@@ -25,7 +24,7 @@ def get_multi_class_labels(data, n_labels, labels=None, remove_background = Fals
             y[:, :, :, label_index][data == (label_index + 1)] = 1
     if remove_background:
         without_background = n_labels - 1
-        y = y[-without_background:] # removing the background
+        y = y[:,:,:,:without_background] # removing the background
     return y
 
 def load_data(data_path, file_format = None):
