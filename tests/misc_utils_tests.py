@@ -128,6 +128,33 @@ class Misc_Utils_Test(unittest.TestCase):
             self.assertTrue(val_new != val)
             self.assertTrue(test_new != test)
 
+    def test_KFold_withdict(self):
+        """
+        Tests that the KFold function: (return_dict = True)
+        1. produces unique folds
+        2. correctly divided folds (the right length wrt the provided percentages)
+        3. randomly outputs folds. (Will produce different folds each time)
+        """
+        n_files = len(os.listdir(self.train_npy_path))
+        # returns lists of files
+        id_dict = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = True)
+        train, val, test = id_dict['train'], id_dict['val'], id_dict['test']
+        # 1. testing that the folds have unique files
+        combined = train + val + test
+        self.assertEqual(n_files, len(combined))
+        self.assertEqual(n_files, np.unique(combined).size)
+         # 2. testing fold lengths
+        self.assertEqual(n_files * 0.6, len(train))
+        self.assertEqual(n_files * 0.2, len(val))
+        self.assertEqual(n_files * 0.2, len(test))
+        # 3. testing that the folds will be different each time (for 3 iterations)
+            # comparing newly generated to the original
+        for i in range(3):
+            id_dict_new = KFold(self.train_npy_path, splits = [0.6, 0.2, 0.2], return_dict = True)
+            self.assertTrue(id_dict_new['train'] != train)
+            self.assertTrue(id_dict_new['val'] != val)
+            self.assertTrue(id_dict_new['test'] != test)
+
     def test_add_channel(self):
         """
         Tests that add_channel adds a channel to the last dimension
