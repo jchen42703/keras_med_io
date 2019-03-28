@@ -53,9 +53,9 @@ def extract_nonint_region(image, mask = None, outside_value=0, coords = False):
     pos_idx = np.where(image != outside_value)
     # fetching all of the min/maxes for each axes
     pos_x, pos_y, pos_z = pos_idx[1], pos_idx[2], pos_idx[0]
-    minZidx, maxZidx = int(np.min(pos_z)), int(np.max(pos_z))
-    minXidx, maxXidx = int(np.min(pos_x)), int(np.max(pos_x))
-    minYidx, maxYidx = int(np.min(pos_y)), int(np.max(pos_y))
+    minZidx, maxZidx = int(np.min(pos_z)), int(np.max(pos_z)) + 1
+    minXidx, maxXidx = int(np.min(pos_x)), int(np.max(pos_x)) + 1
+    minYidx, maxYidx = int(np.min(pos_y)), int(np.max(pos_y)) + 1
     # resize images
     resizer = (slice(minZidx, maxZidx), slice(minXidx, maxXidx), slice(minYidx, maxYidx))
     coord_list = [[minZidx, maxZidx], [minXidx, maxXidx], [minYidx, maxYidx]]
