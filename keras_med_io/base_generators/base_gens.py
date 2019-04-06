@@ -71,6 +71,7 @@ class BaseTransformGenerator(BaseGenerator):
         ndim: number of dimensions of the input (excluding the batch_size and n_channels axes)
         transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
         max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. (x,y, (z,))
+        steps_per_epoch: steps per epoch during training (number of samples per epoch = steps_per_epoch * batch_size )
         shuffle: boolean on whether to shuffle the dataset between epochs
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
