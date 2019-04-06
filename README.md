@@ -12,7 +12,6 @@ This is currently in alpha, and I'm open to anyone who wants to contribute!
 * The data augmentation is reliant on [MIC-DKFZ's batchgenerators](https://github.com/MIC-DKFZ/batchgenerators) and their `transforms` API.
 * Some of the patch extraction in `patch_utils.py` and `patch.py` are from [ellisdg's 3DUnetCNN repository](https://github.com/ellisdg/3DUnetCNN).
 * Some of the I/O functions are directly from or inspired by [MedicalDetectionToolkit](https://github.com/pfjaeger/medicaldetectiontoolkit) and [Isensee's BRaTS2017 Submission](https://github.com/MIC-DKFZ/BraTS2017).
-  * __Note: I still need to update my license to accommodate for their [Apache 2.0 license](https://tldrlegal.com/license/apache-license-2.0-(apache-2.0)).__
 
 ## What This Does Right
 * Can achieve state-of-the-art results
@@ -26,6 +25,13 @@ A lot of the suggestions is located within individual modules' `README.md`'s, bu
   * Make some easy, simple examples.
   * Provide links to my personal use cases w/Colab Notebooks.
 * Tests (particularly for any I/O functions)
+
+# Installation
+```
+git clone https://github.com/jchen42703/keras_med_io.git
+cd keras_med_io
+pip install .
+```
 
 ## Main Utilities
 ### Base Generators
@@ -71,8 +77,6 @@ This module contains a bunch of submodules with easy, documented, reusable, and 
     * __Patch extraction:__ `get_random_slice_idx`, `get_positive_idx`
 
 ### Inference
-The goal of this module is to provide evaluation and prediction tools for medical segmentation/classification. Currently, this module is still in-the-works to make a more generalizable framework.
-#### Agenda
-* Patch evaluation and aggregation
-* Cleaner examples
-* Pipeline for easy general inference
+The goal of this module is to provide evaluation and prediction tools for medical segmentation/classification. Currently, this module is still in-the-works to make a more generalizable framework. <br>
+Currently, the module only has:
+* `infer_utils.py`, which contains useful functions for undoing operations, such as undoing `reshape` or `extract_nonint_region`.
