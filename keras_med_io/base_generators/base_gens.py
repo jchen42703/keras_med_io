@@ -108,6 +108,9 @@ class BaseTransformGenerator(BaseGenerator):
         assert n_idx == self.indexes.size
 
     def __len__(self):
+        """
+        Steps per epoch (total number of samples per epoch / batch size)
+        """
         return int(np.ceil(len(self.indexes) / float(self.batch_size)))
 
     def on_epoch_end(self):
