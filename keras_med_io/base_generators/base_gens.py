@@ -71,10 +71,11 @@ class BaseTransformGenerator(BaseGenerator):
         ndim: number of dimensions of the input (excluding the batch_size and n_channels axes)
         transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
         max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. (x,y, (z,))
+        steps_per_epoch: steps per epoch during training (number of samples per epoch = steps_per_epoch * batch_size )
         shuffle: boolean on whether to shuffle the dataset between epochs
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                transform = None, max_patient_shape = None, n_workers = 1, shuffle = True):
+                transform = None, max_patient_shape = None, steps_per_epoch = 1000, shuffle = True):
 
         BaseGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, shuffle = shuffle)
@@ -85,39 +86,32 @@ class BaseTransformGenerator(BaseGenerator):
             self.max_patient_shape = self.compute_max_patient_shape()
         n_samples = len(self.list_IDs)
         self.indexes = np.arange(n_samples)
-        max_n_idx = batch_size * (n_workers + 2) # default for now
-
+        n_idx = self.batch_size * steps_per_epoch # number of samples per epoch
         # Handles cases where the dataset is small and the batch size is high
-        if max_n_idx > n_samples:
-            print("Adjusting the indexes since the batch size [adjusted with the n_workers] is greater than the number of images.")
-            self.adjust_indexes(max_n_idx)
+        if n_idx > n_samples:
+            print("Adjusting the indexes since the total number of required samples (steps_per_epoch * batch_size) is greater than",
+            "the number of provided images.")
+            self.adjust_indexes(n_idx)
             print("Done!")
+        assert self.indexes.size == n_idx
 
-    def adjust_indexes(self, max_n_idx):
+    def adjust_indexes(self, n_idx):
         """
-        Adjusts the indexes when the batch size [adjusted with the n_workers] is greater than the number of images.
-        This is primarily used to make sure that there will always be enough indices for the generator to use during multiprocessing.
-        Args:
-            max_n_idx: The current maximum size of self.indexes, which is based on the current max `idx` from `__getitem__`, so it
-            should be `(idx + 1) * batch_size` or some variant of that.
-        Returns:
-            Nothing
+        Adjusts self.indexes to the length of n_idx.
         """
-        if max_n_idx < self.indexes.size:
-            print("WARNING! The max_n_idx should be larger than the current number of indexes or else there's no point in using this \n\
-            function. It has been automatically adjusted for you.")
-            max_n_idx = self.batch_size * max_n_idx
+        assert n_idx > self.indexes.size, "WARNING! The n_idx should be larger than the current number of indexes or else \
+                                           there's no point in using this function. It has been automatically adjusted for you."
         # expanding the indexes until it passes the threshold: max_n_idx (extra will be removed later)
-        while max_n_idx > self.indexes.size:
+        while n_idx > self.indexes.size:
             self.indexes = np.repeat(self.indexes, 2)
 
-        # ensuring that batch_size is divisible into the number of indices
-        if not len(self.indexes) % self.batch_size == 0:
-          # Making sure that the batch_size is divisible into the number of indices
-          self.indexes = self.indexes[:-(len(self.indexes) % (max_n_idx))]
-          assert max_n_idx == self.indexes.size
+        self.indexes = self.indexes[:-(len(self.indexes) % (n_idx))]
+        assert n_idx == self.indexes.size
 
     def __len__(self):
+        """
+        Steps per epoch (total number of samples per epoch / batch size)
+        """
         return int(np.ceil(len(self.indexes) / float(self.batch_size)))
 
     def on_epoch_end(self):
