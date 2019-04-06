@@ -1,5 +1,5 @@
 # Base Generators
-This specific module is for low-level abstract generators for you to reuse in your in your own keras pipelines. The current base generators are: <br>
+This specific module is for low-level abstract generators for you to reuse in your own keras pipelines. The current base generators are: <br>
 * `BaseGenerator`: Basic framework for generating thread-safe data in keras. (no preprocessing and channels_last)
   Based on https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
 * `BaseTransformGenerator`: Loads data and applies data augmentation with `batchgenerators.transforms`.
@@ -15,3 +15,5 @@ Overall, these base generators are made with the intent to be open to a variety 
 * `batch_size`: batch size for the network
 * `n_channels`: The number of channels that your data has. This parameter exists to handle cases where the number of input channels does not match that of the output segmentation.
 * `n_classes`: The number of classes. Again, this is to handle cases where the number of input channels does not match that of the output segmentation.
+* `steps_per_epoch`: steps per epoch (# of samples per epoch = steps_per_epoch * batch size)
+* `shuffle`: boolean on whether or not you want to shuffle after each epoch
