@@ -104,9 +104,14 @@ class BaseTransformGenerator(BaseGenerator):
         # expanding the indexes until it passes the threshold: max_n_idx (extra will be removed later)
         while n_idx > self.indexes.size:
             self.indexes = np.repeat(self.indexes, 2)
+        remainder = (len(self.indexes) % (n_idx))
+        if remainder != 0:
+            self.indexes = self.indexes[:-remainder]
 
-        self.indexes = self.indexes[:-(len(self.indexes) % (n_idx))]
-        assert n_idx == self.indexes.size
+        try:
+            assert n_idx == self.indexes.size, "Expected number of indices per epoch does not match self.indexes.size."
+        except AssertionError:
+            raise Exception("Please make your steps_per_epoch > 3 if your batch size is < 3.")
 
     def __len__(self):
         """
